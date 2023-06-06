@@ -3,11 +3,11 @@
 This is a fork of the original news-please project. The goal of this fork is to make the project adaptable fot k8s and other cloud native environments. The original project is not in active development anymore. 
 
 ## Roadmap
-- [ ] Basic update of dependencies
+- [x] Basic update of dependencies
 - [ ] Add CI/CD
 - [ ] Add automatic docker builds
-- [ ] Update to Python ^3.9
-- [ ] Use [poetry](https://python-poetry.org/) for dependency management
+- [x] Update to Python ^3.9
+- [x] Use [poetry](https://python-poetry.org/) for dependency management
 - [ ] Add support for k8s using kustomize or helm
 - [ ] Add support for [kafka](https://kafka.apache.org/) 
 
