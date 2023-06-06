@@ -1,10 +1,9 @@
-FROM python:3.6.5-alpine3.7
+FROM python:3.9-alpine3.17
 
-RUN apk add -U --no-cache curl git make gcc python-dev libffi-dev musl-dev libxml2-dev libxslt-dev openssl-dev zlib-dev jpeg-dev
-RUN git clone https://github.com/fhamborg/news-please.git /news-please
-RUN cd /news-please && pip3 install -r requirements.txt
+RUN apk add -U --no-cache build-base curl git make gcc python3-dev libffi-dev musl-dev libxml2-dev libxslt-dev openssl-dev zlib-dev jpeg-dev
+ADD . /news-please
+WORKDIR  /news-please 
+RUN pip3 install -r requirements.txt
+RUN chmod +x docker.sh
 
-COPY docker.sh /
-RUN chmod +x /docker.sh
-
-CMD ["/docker.sh"]
+CMD ["docker.sh"]

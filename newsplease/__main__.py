@@ -472,6 +472,11 @@ Do you really want to do this? Write 'yes' to confirm: {yes}"""
 
         try:
             # initialize DB connection
+            if not self.elasticsearch.get("username", None) or not self.elasticsearch.get("username", None):
+                self.elasticsearch["username"] = os.getenv("ELASTICSEARCH_USERNAME")
+                self.elasticsearch["secret"] = os.getenv("ELASTICSEARCH_SECRET")
+                
+            
             es = Elasticsearch([self.elasticsearch["host"]],
                                http_auth=(self.elasticsearch["username"], self.elasticsearch["secret"]),
                                port=self.elasticsearch["port"],
