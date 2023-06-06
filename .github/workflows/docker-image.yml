@@ -10,6 +10,7 @@ on:
   pull_request:
     branches: [ "*docker*" ]
 
+
 jobs:
   build-crawler:
     runs-on: ubuntu-latest
@@ -34,12 +35,9 @@ jobs:
           context: ./
           file: ./Dockerfile
           push: true
-          
           tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/news-please-ng:${GITHUB_REF##*/}$(date +%s)
+            ${{ secrets.DOCKER_HUB_USERNAME }}/news-please-ng:${{ github.head_ref }}$(date +%s)
             ${{ secrets.DOCKER_HUB_USERNAME }}/news-please-ng:latest
-
-
-
+            
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
