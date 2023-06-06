@@ -4,11 +4,12 @@ on:
   schedule:
     - cron: "0 23 15 * *"
   push:
-    branches: ["master"]
+    branches: [ "master" ]
     # Publish semver tags as releases.
-    tags: ["v*.*.*"]
+    tags: [ 'v*.*.*' ]
   pull_request:
-    branches: ["*docker*"]
+    branches: [ "*docker*" ]
+
 
 jobs:
   build-crawler:
@@ -34,10 +35,9 @@ jobs:
           context: ./
           file: ./Dockerfile
           push: true
-
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/news-please-ng:${{ github.head_ref }}$(date +%s)
             ${{ secrets.DOCKER_HUB_USERNAME }}/news-please-ng:latest
-
+            
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
