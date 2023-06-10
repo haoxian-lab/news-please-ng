@@ -5,7 +5,7 @@ This is a fork of the original news-please project. The goal of this fork is to 
 ## Roadmap
 - [x] Basic update of dependencies
 - [ ] Add CI/CD
-- [ ] Add automatic docker builds
+- [x] Add automatic docker builds in github actions
 - [x] Update to Python ^3.9
 - [x] Use [poetry](https://python-poetry.org/) for dependency management
 - [ ] Add support for k8s using kustomize or helm
