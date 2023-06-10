@@ -1,0 +1,62 @@
+[tool.poetry]
+name = "news-please-ng"
+version = "0.1.0"
+description = "A fork of news-please aims to be a cloud-native mod. Refer to the original project: https://github.com/fhamborg/news-please"
+authors = ["Haoxian WANG <sharockys@gmail.com>"]
+license = "Apache License 2.0"
+readme = "README.md"
+packages = [{ include = "newsplease" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Internet",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+lxml = "^4.9.2"
+Scrapy = "^2.9.0"
+pymysql = "^1.0.3"
+hjson = "^3.1.0"
+psycopg2-binary = "^2.9.6"
+elasticsearch = "^8.8.0"
+beautifulsoup4 = "^4.12.2"
+readability-lxml = "^0.8.1"
+newspaper3k = "^0.2.8"
+langdetect = "^1.0.9"
+python-dateutil = "^2.8.2"
+plac = "^1.3.5"
+PyDispatcher = "^2.0.7"
+dotmap = "^1.3.30"
+warcio = "^1.7.4"
+ago = "^0.0.95"
+six = "^1.16.0"
+hurry-filesize = "^0.9"
+bs4 = "^0.0.1"
+cchardet = "^2.1.7"
+boto3 = "^1.26.151"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+pytest-cov = "^3.0.0"
+pytest-mock = "^3.6.1"
+pylint = "^2.11.1"
+black = "^21.9b0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+news-please = "newsplease.__main__:main"
+news-please-cc = "newsplease.examples.commoncrawl:main"
