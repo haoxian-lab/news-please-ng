@@ -7,4 +7,4 @@ WORKDIR  /news-please-ng
 RUN pip3 install .
 RUN chmod +x docker.sh
 
-CMD ["docker.sh"]
+CMD ["python3", " __main__.py", "-c", "/news-please-ng-config"]
