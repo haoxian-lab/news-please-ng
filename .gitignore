@@ -10,3 +10,4 @@ news-please.iml
 
 venv/
 .vscode
+*.local
