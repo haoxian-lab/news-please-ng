@@ -23,7 +23,7 @@ spec:
           command: ["python3"]
           args: ["newsplease/__main__.py", "-c", "/news-please-ng-config"]
         - name: news-please-vpn-sidecar
-          image: qmcgaw/gluetun
+          image: qmcgaw/gluetun:latest
           securityContext:
             capabilities:
               add:
@@ -31,6 +31,13 @@ spec:
           envFrom:
             - secretRef:
                 name: nord-secret
+          env:
+            - name: DNS_KEEP_NAMESERVER
+              value: on
+            - name: UNBLOCK
+              value: cluster.local
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: 0.0.0.0/0
       volumes:
         - name: config-volume
           configMap:
