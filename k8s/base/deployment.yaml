@@ -38,7 +38,31 @@ spec:
               value: cluster.local
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: 0.0.0.0/0
+            - name: TZ
+              value: Europe/Paris
+            - name: UPDATER_PERIOD
+              value: 6h
+          volumeMounts:
+            - name: vpn-volume
+              mountPath: /gluetun
       volumes:
         - name: config-volume
           configMap:
             name: news-please-configmap
+        - name: vpn-volume
+          persistentVolumeClaim:
+            claimName: longhorn-vpn-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: longhorn-vpn-pvc
+  namespace: news-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-dev
+  resources:
+    requests:
+      storage: 100Mi
