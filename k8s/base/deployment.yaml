@@ -45,6 +45,7 @@ spec:
           volumeMounts:
             - name: vpn-volume
               mountPath: /gluetun
+
       volumes:
         - name: config-volume
           configMap:
