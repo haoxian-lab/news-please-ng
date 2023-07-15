@@ -45,6 +45,7 @@ hurry-filesize = "^0.9"
 bs4 = "^0.0.1"
 cchardet = "^2.1.7"
 boto3 = "^1.26.151"
+loguru = "^0.5.3"
 
 [tool.poetry.dev-dependencies]
 black = "^23.3.0"

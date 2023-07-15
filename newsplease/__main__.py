@@ -1,4 +1,3 @@
-import logging
 import os
 import shutil
 import signal
@@ -12,7 +11,7 @@ import plac
 import psycopg2
 import pymysql
 from elasticsearch import Elasticsearch
-from scrapy.utils.log import configure_logging
+from loguru import logger
 
 cur_path = os.path.dirname(os.path.realpath(__file__))
 par_path = os.path.dirname(cur_path)
@@ -81,8 +80,7 @@ class NewsPleaseLauncher(object):
         :param is_reset_postgresql:
         :param is_no_confirm:
         """
-        configure_logging({"LOG_LEVEL": "ERROR"})
-        self.log = logging.getLogger(__name__)
+        self.log = logger
 
         # other parameters
         self.shall_resume = is_resume

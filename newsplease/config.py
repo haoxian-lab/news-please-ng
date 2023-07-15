@@ -8,10 +8,10 @@ It handles the [General]-Section of the config.
 All object-getters create deepcopies.
 """
 
-import logging
 from copy import deepcopy
 
 import hjson
+from loguru import logger
 
 try:
     import ConfigParser
@@ -20,8 +20,6 @@ except ImportError:
 
 import os
 from ast import literal_eval
-
-from scrapy.utils.log import configure_logging
 
 
 class CrawlerConfig(object):
@@ -84,7 +82,7 @@ class CrawlerConfig(object):
             self.log.warning("Disallowed multiple setup of config.")
             return
 
-        self.log = logging.getLogger(__name__)
+        self.log = logger
         self.parser = ConfigParser.RawConfigParser()
         self.parser.read(filepath)
         self.sections = self.parser.sections()
@@ -92,7 +90,6 @@ class CrawlerConfig(object):
             {"level": "info", "msg": "Loading config-file (%s)" % filepath}
         )
         self.load_config()
-        self.handle_logging()
 
     def load_config(self):
         """
@@ -148,23 +145,6 @@ class CrawlerConfig(object):
             for key, value in options.items():
                 self.__scrapy_options[key.upper()] = value
         return self.__scrapy_options
-
-    def handle_logging(self):
-        """
-        To allow devs to log as early as possible, logging will already be
-        handled here
-        """
-
-        configure_logging(self.get_scrapy_options())
-
-        # Now, after log-level is correctly set, lets log them.
-        for msg in self.log_output:
-            if msg["level"] == "error":
-                self.log.error(msg["msg"])
-            elif msg["level"] == "info":
-                self.log.info(msg["msg"])
-            elif msg["level"] == "debug":
-                self.log.debug(msg["msg"])
 
     def config(self):
         """

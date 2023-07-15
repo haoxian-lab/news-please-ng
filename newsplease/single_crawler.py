@@ -15,11 +15,8 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.settings import Settings
 from scrapy.spiderloader import SpiderLoader
 from scrapy.utils.log import configure_logging
+from twisted.internet.error import ReactorAlreadyRunning
 
-cur_path = os.path.dirname(os.path.realpath(__file__))
-par_path = os.path.dirname(cur_path)
-sys.path.append(cur_path)
-sys.path.append(par_path)
 from newsplease.config import CrawlerConfig, JsonConfig
 from newsplease.crawler.items import NewscrawlerItem
 from newsplease.helper import Helper
@@ -30,7 +27,14 @@ try:
 except ImportError:
     from thread import start_new_thread
 
-from twisted.internet.error import ReactorAlreadyRunning
+
+
+cur_path = os.path.dirname(os.path.realpath(__file__))
+par_path = os.path.dirname(cur_path)
+sys.path.append(cur_path)
+sys.path.append(par_path)
+
+
 
 
 class SingleCrawler(object):
