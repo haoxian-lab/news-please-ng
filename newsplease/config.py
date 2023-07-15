@@ -18,9 +18,10 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
-from ast import literal_eval
-from scrapy.utils.log import configure_logging
 import os
+from ast import literal_eval
+
+from scrapy.utils.log import configure_logging
 
 
 class CrawlerConfig(object):

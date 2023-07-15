@@ -8,15 +8,15 @@ import logging
 import os.path
 import sys
 
-import pymysql
 import psycopg2
+import pymysql
 from dateutil import parser as dateparser
 from elasticsearch import Elasticsearch
+from NewsArticle import NewsArticle
 from scrapy.exceptions import DropItem
 
-from NewsArticle import NewsArticle
-from .extractor import article_extractor
 from ..config import CrawlerConfig
+from .extractor import article_extractor
 
 if sys.version_info[0] < 3:
     ConnectionError = OSError

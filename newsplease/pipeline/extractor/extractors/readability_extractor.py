@@ -2,8 +2,8 @@ from copy import deepcopy
 
 from readability import Document
 
-from .abstract_extractor import AbstractExtractor
 from ..article_candidate import ArticleCandidate
+from .abstract_extractor import AbstractExtractor
 
 
 class ReadabilityExtractor(AbstractExtractor):

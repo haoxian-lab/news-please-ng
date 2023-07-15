@@ -2,15 +2,16 @@ try:
     import urllib2
 except ImportError:
     import urllib.request as urllib2
+
 import csv
+import io
 import logging
 import os
 import re
+import zipfile
 
-import io
 import requests
 import scrapy
-import zipfile
 
 # to improve performance, regex statements are compiled only once per module
 re_export = re.compile(r'.*?(http.*?export\.CSV\.zip)')

@@ -9,8 +9,8 @@ from distutils.dir_util import copy_tree
 from subprocess import Popen
 
 import plac
-import pymysql
 import psycopg2
+import pymysql
 from elasticsearch import Elasticsearch
 from scrapy.utils.log import configure_logging
 
@@ -18,9 +18,8 @@ cur_path = os.path.dirname(os.path.realpath(__file__))
 par_path = os.path.dirname(cur_path)
 sys.path.append(cur_path)
 sys.path.append(par_path)
+from newsplease.config import CrawlerConfig, JsonConfig
 from newsplease.helper_classes.savepath_parser import SavepathParser
-from newsplease.config import JsonConfig
-from newsplease.config import CrawlerConfig
 
 try:
     import builtins

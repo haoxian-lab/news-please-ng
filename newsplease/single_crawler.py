@@ -6,11 +6,11 @@ This script starts a crawler.
 
 import hashlib
 import logging
+import os
 import shutil
 import sys
 from ast import literal_eval
 
-import os
 from scrapy.crawler import CrawlerProcess
 from scrapy.settings import Settings
 from scrapy.spiderloader import SpiderLoader
@@ -20,16 +20,16 @@ cur_path = os.path.dirname(os.path.realpath(__file__))
 par_path = os.path.dirname(cur_path)
 sys.path.append(cur_path)
 sys.path.append(par_path)
-from newsplease.config import CrawlerConfig
-from newsplease.config import JsonConfig
+from newsplease.config import CrawlerConfig, JsonConfig
+from newsplease.crawler.items import NewscrawlerItem
 from newsplease.helper import Helper
 from newsplease.helper_classes.class_loader import ClassLoader
-from newsplease.crawler.items import NewscrawlerItem
 
 try:
     from _thread import start_new_thread
 except ImportError:
     from thread import start_new_thread
+
 from twisted.internet.error import ReactorAlreadyRunning
 
 

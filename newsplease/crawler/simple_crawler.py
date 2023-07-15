@@ -1,7 +1,7 @@
-import socket
 import copy
-import threading
 import logging
+import socket
+import threading
 
 import requests
 import urllib3

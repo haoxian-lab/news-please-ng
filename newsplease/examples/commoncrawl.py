@@ -23,12 +23,12 @@ python3 -m newsplease.examples.commoncrawl
 Note that by default the script does not extract main images since they are not contained
 WARC files. You can enable extraction of main images by setting `my_fetch_images=True`
 """
+import datetime
 import hashlib
 import json
 import logging
 import os
 import sys
-import datetime
 from datetime import date
 
 from ..crawler import commoncrawl_crawler as commoncrawl_crawler

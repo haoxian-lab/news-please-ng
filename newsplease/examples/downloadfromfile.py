@@ -6,7 +6,6 @@ script.
 """
 
 import json
-
 import os
 
 from newsplease import NewsPlease

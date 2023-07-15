@@ -9,16 +9,16 @@ import os
 import sys
 import time
 
-from ago import human
 import boto3
 import botocore
+from ago import human
 from dateutil import parser
 from hurry.filesize import size
 from scrapy.utils.log import configure_logging
 from six.moves import urllib
 from warcio.archiveiterator import ArchiveIterator
 
-from .. import NewsPlease, EmptyResponseError
+from .. import EmptyResponseError, NewsPlease
 from . import commoncrawl_crawler
 
 __author__ = "Felix Hamborg"

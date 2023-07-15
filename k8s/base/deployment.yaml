@@ -51,8 +51,8 @@ spec:
           configMap:
             name: news-please-configmap
         - name: vpn-volume
-          persistentVolumeClaim:
-            claimName: longhorn-vpn-pvc
+          emptyDir:
+            sizeLimit: 50Mi
 
 ---
 apiVersion: v1

@@ -4,19 +4,19 @@ Provides functionality to crawl and extract news articles from commoncrawl.org. 
 and host list, can be defined. Currently, all WARC files will be downloaded to the path WORKINGDIR/cc_download_warc, if
 not otherwise specified.
 """
+import datetime
+import gzip
 import logging
 import os
 import time
 from functools import partial
 from multiprocessing import Pool
-import datetime
-import gzip
 from urllib.parse import urlparse
 
 import boto3
 import botocore
-from dateutil import parser
 import requests
+from dateutil import parser
 from scrapy.utils.log import configure_logging
 
 from ..crawler.commoncrawl_extractor import CommonCrawlExtractor

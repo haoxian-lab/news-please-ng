@@ -2,8 +2,8 @@ import logging
 
 from newspaper import Article
 
-from .abstract_extractor import AbstractExtractor
 from ..article_candidate import ArticleCandidate
+from .abstract_extractor import AbstractExtractor
 
 
 class NewspaperExtractor(AbstractExtractor):

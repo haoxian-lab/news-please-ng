@@ -47,11 +47,11 @@ cchardet = "^2.1.7"
 boto3 = "^1.26.151"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-pytest-cov = "^3.0.0"
-pytest-mock = "^3.6.1"
-pylint = "^2.11.1"
-black = "^21.9b0"
+black = "^23.3.0"
+isort = "^5.12.0"
+mypy = "^1.2.0"
+pylint = "^2.17.2"
+pytest = "^7.3.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -60,3 +60,8 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 news-please = "newsplease.__main__:main"
 news-please-cc = "newsplease.examples.commoncrawl:main"
+
+[tool.pylint.messages_control]
+max-line-length = 88
+disable = ["missing-docstring", "too-few-public-methods"]
+extension-pkg-whitelist = ["pydantic"]
