@@ -4,31 +4,25 @@ import signal
 import sys
 import threading
 import time
-from distutils.dir_util import copy_tree
 from subprocess import Popen
 
+import builtins
 import plac
 import psycopg2
 import pymysql
 from elasticsearch import Elasticsearch
 from loguru import logger
 
+from newsplease.config import CrawlerConfig, JsonConfig
+from newsplease.helper_classes.savepath_parser import SavepathParser
+
 cur_path = os.path.dirname(os.path.realpath(__file__))
 par_path = os.path.dirname(cur_path)
 sys.path.append(cur_path)
 sys.path.append(par_path)
-from newsplease.config import CrawlerConfig, JsonConfig
-from newsplease.helper_classes.savepath_parser import SavepathParser
-
-try:
-    import builtins
-except ImportError:
-    from future import builtins
-if sys.version_info[0] < 3:
-    ConnectionError = OSError
 
 
-class NewsPleaseLauncher(object):
+class NewsPleaseLauncher:
     """
     This class is supposed to be called initially to start all processes.  It
     sets up and manages all crawlers.
@@ -155,7 +149,8 @@ class NewsPleaseLauncher(object):
 
     def set_stop_handler(self):
         """
-        Initializes functions that are invoked when the user or OS wants to kill this process.
+        Initializes functions that are invoked when the
+            user or OS wants to kill this process.
         :return:
         """
         signal.signal(signal.SIGTERM, self.graceful_stop)
@@ -269,30 +264,30 @@ class NewsPleaseLauncher(object):
             self.__single_crawler,
             self.cfg_file_path,
             self.json_file_path,
-            "%s" % index,
-            "%s" % self.shall_resume,
-            "%s" % daemonize,
+            str(index),
+            str(self.shall_resume),
+            str(daemonize),
         ]
 
         self.log.debug("Calling Process: %s", call_process)
 
-        crawler = Popen(call_process, stderr=None, stdout=None)
+        crawler = Popen(
+            call_process, stderr=None, stdout=None
+        )  # pylint: disable=consider-using-with
         crawler.communicate()
         self.crawlers.append(crawler)
 
-    def graceful_stop(self, signal_number=None, stack_frame=None):
+    def graceful_stop(self, signal_number=None):
         """
         This function will be called when a graceful-stop is initiated.
         """
         stop_msg = "Hard" if self.shutdown else "Graceful"
         if signal_number is None:
-            self.log.info("%s stop called manually. " "Shutting down.", stop_msg)
+            self.log.info(f"{stop_msg} stop called manually. \n Shutting down...")
         else:
             self.log.info(
-                "%s stop called by signal #%s. Shutting down." "Stack Frame: %s",
-                stop_msg,
-                signal_number,
-                stack_frame,
+                f"{stop_msg} stop called by signal #{signal_number}. Shutting down."
+                "Stack Frame: {stack_frame}"
             )
         self.shutdown = True
         self.crawler_list.stop()
@@ -302,7 +297,8 @@ class NewsPleaseLauncher(object):
 
     def init_config_file_path_if_empty(self):
         """
-        if the config file path does not exist, this function will initialize the path with a default
+        if the config file path does not exist,
+            this function will initialize the path with a default.
         config file
         :return
         """
@@ -320,10 +316,8 @@ class NewsPleaseLauncher(object):
                 + "'. "
                 + "Should a default configuration be created at this path? [Y/n] "
             )
-            if sys.version_info[0] < 3:
-                user_choice = raw_input()
-            else:
-                user_choice = input()
+
+            user_choice = input()
             user_choice = user_choice.lower().replace("yes", "y").replace("no", "n")
 
         if not user_choice or user_choice == "":  # the default is yes
@@ -336,7 +330,7 @@ class NewsPleaseLauncher(object):
             sys.exit(1)
 
         # copy the default config file to the new path
-        copy_tree(
+        shutil.copytree(
             os.environ["CColon"] + os.path.sep + "config", self.cfg_directory_path
         )
         return
@@ -403,10 +397,7 @@ Cleanup MySQL database:
 
         if not confirm:
             confirm = "yes" in builtins.input(
-                """
-    Do you really want to do this? Write 'yes' to confirm: {yes}""".format(
-                    yes="yes" if confirm else ""
-                )
+                "Do you really want to do this? Write 'yes' to confirm:"
             )
 
         if not confirm:
@@ -454,10 +445,7 @@ Cleanup Postgresql database:
 
         if not confirm:
             confirm = "yes" in builtins.input(
-                """
-    Do you really want to do this? Write 'yes' to confirm: {yes}""".format(
-                    yes="yes" if confirm else ""
-                )
+                "Do you really want to do this? Write 'yes' to confirm:"
             )
 
         if not confirm:
@@ -504,10 +492,7 @@ Cleanup Elasticsearch database:
 
         if not confirm:
             confirm = "yes" in builtins.input(
-                """
-Do you really want to do this? Write 'yes' to confirm: {yes}""".format(
-                    yes="yes" if confirm else ""
-                )
+                "Do you really want to do this? Write 'yes' to confirm: "
             )
 
         if not confirm:
@@ -522,14 +507,12 @@ Do you really want to do this? Write 'yes' to confirm: {yes}""".format(
                 self.elasticsearch["username"] = os.getenv("ELASTICSEARCH_USERNAME")
                 self.elasticsearch["secret"] = os.getenv("ELASTICSEARCH_SECRET")
 
-            es = Elasticsearch(
+            es_client = Elasticsearch(
                 [self.elasticsearch["host"]],
                 http_auth=(
                     self.elasticsearch["username"],
                     self.elasticsearch["secret"],
                 ),
-                port=self.elasticsearch["port"],
-                use_ssl=self.elasticsearch["use_ca_certificates"],
                 verify_certs=self.elasticsearch["use_ca_certificates"],
                 ca_certs=self.elasticsearch["ca_cert_path"],
                 client_cert=self.elasticsearch["client_cert_path"],
@@ -537,17 +520,19 @@ Do you really want to do this? Write 'yes' to confirm: {yes}""".format(
             )
 
             print("Resetting Elasticsearch database...")
-            es.indices.delete(
-                index=self.elasticsearch["index_current"], ignore=[400, 404]
+            es_client.options(ignore_status=[400, 404]).indices.delete(
+                index=self.elasticsearch["index_current"]
             )
-            es.indices.delete(
-                index=self.elasticsearch["index_archive"], ignore=[400, 404]
+            es_client.options(ignore_status=[400, 404]).indices.delete(
+                index=self.elasticsearch["index_archive"]
             )
-        except ConnectionError as error:
+        except (ConnectionError, OSError) as error:
             self.log.error(
-                "Failed to connect to Elasticsearch. "
-                "Please check if the database is running and the config is correct: %s"
-                % error
+                f"""
+                Failed to connect to Elasticsearch. 
+                Please check if the elk is running and the config is correct: 
+                {error}
+                """
             )
 
     def reset_files(self):
@@ -564,27 +549,24 @@ Do you really want to do this? Write 'yes' to confirm: {yes}""".format(
         )
 
         print(
-            """
-Cleanup files:
-    This will delete {path} and all its contents.
-""".format(
+            f"""
+            Cleanup files:
+                This will delete {path} and all its contents.
+            """.format(
                 path=path
             )
         )
 
         if not confirm:
             confirm = "yes" in builtins.input(
-                """
-    Do you really want to do this? Write 'yes' to confirm: {yes}""".format(
-                    yes="yes" if confirm else ""
-                )
+                "Do you really want to do this? Write 'yes' to confirm:"
             )
 
         if not confirm:
             print("Did not type yes. Thus aborting.")
             return
 
-        print("Removing: {}".format(path))
+        print(f"Removing: {path}")
 
         try:
             shutil.rmtree(path)
@@ -593,7 +575,7 @@ Cleanup files:
                 self.log.error("%s does not exist.", path)
             self.log.error(error)
 
-    class CrawlerList(object):
+    class CrawlerList:
         """
         Class that manages all crawlers that aren't supposed to be daemonized.
         Exists to be able to use threading.Lock().
@@ -612,11 +594,8 @@ Cleanup files:
 
             :param: item to append to the crawler_list.
             """
-            self.lock.acquire()
-            try:
+            with self.lock:
                 self.crawler_list.append(item)
-            finally:
-                self.lock.release()
 
         def len(self):
             """
@@ -632,23 +611,16 @@ Cleanup files:
 
             :return: crawler_list's first item
             """
-            if self.graceful_stop:
-                return None
-            self.lock.acquire()
-            try:
-                if len(self.crawler_list) > 0:
-                    item = self.crawler_list.pop(0)
-                else:
-                    item = None
-            finally:
-                self.lock.release()
-
-            return item
+            if not self.graceful_stop:
+                with self.lock:
+                    if len(self.crawler_list) > 0:
+                        return self.crawler_list.pop(0)
+            return None
 
         def stop(self):
             self.graceful_stop = True
 
-    class DaemonList(object):
+    class DaemonList:
         """
         Class that manages all crawlers that are supposed to be daemonized.
         Exists to be able to use threading.Lock().
@@ -689,12 +661,9 @@ Cleanup files:
             :param _time: The repetition-time (every _time seconds the crawler)
                 starts again.
             """
-            self.lock.acquire()
-            try:
+            with self.lock:
                 self.daemons[index] = _time
                 self.add_execution(time.time(), index)
-            finally:
-                self.lock.release()
 
         def add_execution(self, _time, index):
             """
@@ -722,10 +691,9 @@ Cleanup files:
             if self.graceful_stop:
                 return None
 
-            self.lock.acquire()
-            self.sort_queue()
+            with self.lock:
+                self.sort_queue()
 
-            try:
                 item = self.queue.pop(0)
                 prev_time = self.queue_times.pop(0)
 
@@ -734,8 +702,6 @@ Cleanup files:
                     max(prev_time, time.time()) + self.daemons[item[1]],
                     item[1],
                 )
-            finally:
-                self.lock.release()
 
             return item
 
