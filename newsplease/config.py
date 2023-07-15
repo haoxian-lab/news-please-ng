@@ -70,9 +70,9 @@ class CrawlerConfig(object):
 
         if CrawlerConfig.instance is not None:
             self.log_output.append(
-                {"level": "error",
-                 "msg": "Multiple instances of singleton-class"})
-            raise RuntimeError('Multiple instances of singleton-class')
+                {"level": "error", "msg": "Multiple instances of singleton-class"}
+            )
+            raise RuntimeError("Multiple instances of singleton-class")
 
     def setup(self, filepath):
         """
@@ -89,7 +89,8 @@ class CrawlerConfig(object):
         self.parser.read(filepath)
         self.sections = self.parser.sections()
         self.log_output.append(
-            {"level": "info", "msg": "Loading config-file (%s)" % filepath})
+            {"level": "info", "msg": "Loading config-file (%s)" % filepath}
+        )
         self.load_config()
         self.handle_logging()
 
@@ -101,36 +102,38 @@ class CrawlerConfig(object):
 
         # Parse sections, its options and put it in self.config.
         for section in self.sections:
-
             self.__config[section] = {}
             options = self.parser.options(section)
 
             # Parse options of each section
             for option in options:
-
                 try:
-                    opt = self.parser \
-                        .get(section, option)
+                    opt = self.parser.get(section, option)
                     try:
                         self.__config[section][option] = literal_eval(opt)
                     except (SyntaxError, ValueError):
                         self.__config[section][option] = opt
                         self.log_output.append(
-                            {"level": "debug",
-                             "msg": "Option not literal_eval-parsable"
-                                    " (maybe string): [{0}] {1}"
-                                    .format(section, option)})
+                            {
+                                "level": "debug",
+                                "msg": "Option not literal_eval-parsable"
+                                " (maybe string): [{0}] {1}".format(section, option),
+                            }
+                        )
 
                     if self.__config[section][option] == -1:
                         self.log_output.append(
-                            {"level": "debug",
-                             "msg": "Skipping: [%s] %s" % (section, option)}
+                            {
+                                "level": "debug",
+                                "msg": "Skipping: [%s] %s" % (section, option),
+                            }
                         )
                 except ConfigParser.NoOptionError as exc:
                     self.log_output.append(
-                        {"level": "error",
-                         "msg": "Exception on [%s] %s: %s"
-                                % (section, option, exc)}
+                        {
+                            "level": "error",
+                            "msg": "Exception on [%s] %s: %s" % (section, option, exc),
+                        }
                     )
                     self.__config[section][option] = None
 
@@ -197,7 +200,7 @@ class CrawlerConfig(object):
         :return mixed: The option from from the config.
         """
         if self.__current_section is None:
-            raise RuntimeError('No section set in option-getting')
+            raise RuntimeError("No section set in option-getting")
         return self.__config[self.__current_section][option]
 
     def get_working_path(self):
@@ -205,10 +208,10 @@ class CrawlerConfig(object):
         Gets the working path. If the path starts with a ~, this will be replaced by the current user's home path.
         :return:
         """
-        self.set_section('Files')
+        self.set_section("Files")
         raw_path = self.option("working_path")
-        if raw_path.startswith('~'):
-            raw_path = os.path.expanduser('~') + raw_path[1:]
+        if raw_path.startswith("~"):
+            raw_path = os.path.expanduser("~") + raw_path[1:]
 
         return raw_path
 
@@ -252,8 +255,8 @@ class JsonConfig(object):
         """
         self.log = logging.getLogger(__name__)
         if JsonConfig.instance is not None:
-            self.log.error('Multiple instances of singleton-class')
-            raise RuntimeError('Multiple instances of singleton-class')
+            self.log.error("Multiple instances of singleton-class")
+            raise RuntimeError("Multiple instances of singleton-class")
 
     def setup(self, filepath):
         """
@@ -270,7 +273,7 @@ class JsonConfig(object):
 
         :param filepath (string): The location of the JSON-file.
         """
-        self.__json_object = hjson.load(open(filepath, 'r'))
+        self.__json_object = hjson.load(open(filepath, "r"))
 
     def config(self):
         """
