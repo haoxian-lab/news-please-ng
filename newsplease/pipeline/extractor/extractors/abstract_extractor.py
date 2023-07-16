@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 
 from ..article_candidate import ArticleCandidate
 
+# pylint: disable=unused-argument
+
 
 class AbstractExtractor:
     """Abstract class for article extractors."""
@@ -18,31 +20,24 @@ class AbstractExtractor:
 
     def _language(self, item):
         """Returns the language of the extracted article."""
-        return None
 
     def _title(self, item):
         """Returns the title of the extracted article."""
-        return None
 
     def _description(self, item):
         """Returns the description/lead paragraph of the extracted article."""
-        return None
 
     def _text(self, item):
         """Returns the main text of the extracted article."""
-        return None
 
     def _topimage(self, item):
         """Returns the top image of the extracted article."""
-        return None
 
     def _author(self, item):
         """Returns the authors of the extracted article."""
-        return None
 
     def _publish_date(self, item):
         """Returns the publish date of the extracted article."""
-        return None
 
     def extract(self, item):
         """Executes all implemented functions on the given article and returns an
@@ -54,6 +49,7 @@ class AbstractExtractor:
 
         article_candidate = ArticleCandidate()
         article_candidate.extractor = self._name()
+        # pylint: disable=assignment-from-no-return
         article_candidate.title = self._title(item)
         article_candidate.description = self._description(item)
         article_candidate.text = self._text(item)
