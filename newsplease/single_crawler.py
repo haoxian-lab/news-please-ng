@@ -11,6 +11,7 @@ import shutil
 import sys
 from ast import literal_eval
 
+from _thread import start_new_thread
 from scrapy.crawler import CrawlerProcess
 from scrapy.settings import Settings
 from scrapy.spiderloader import SpiderLoader
@@ -22,19 +23,11 @@ from newsplease.crawler.items import NewscrawlerItem
 from newsplease.helper import Helper
 from newsplease.helper_classes.class_loader import ClassLoader
 
-try:
-    from _thread import start_new_thread
-except ImportError:
-    from thread import start_new_thread
-
-
 
 cur_path = os.path.dirname(os.path.realpath(__file__))
 par_path = os.path.dirname(cur_path)
 sys.path.append(cur_path)
 sys.path.append(par_path)
-
-
 
 
 class SingleCrawler(object):
@@ -110,7 +103,8 @@ class SingleCrawler(object):
 
         self.cfg_crawler = self.cfg.section("Crawler")
 
-        # load the URL-input-json-file or - if in library mode - take the json_file_path as the site information (
+        # load the URL-input-json-file or - if in library mode
+        # - take the json_file_path as the site information (
         # kind of hacky..)
         if not library_mode:
             self.json = JsonConfig.get_instance()
@@ -122,9 +116,9 @@ class SingleCrawler(object):
             site = json_file_path
 
         if "ignore_regex" in site:
-            ignore_regex = "(%s)|" % site["ignore_regex"]
+            ignore_regex = f"({site['ignore_regex']})|"
         else:
-            ignore_regex = "(%s)|" % self.cfg.section("Crawler")["ignore_regex"]
+            ignore_regex = f"{self.cfg.section('Crawler')['ignore_regex']}|"
 
         # Get the default crawler. The crawler can be overwritten by fallbacks.
         if "additional_rss_daemon" in site and self.daemonize:
@@ -171,10 +165,14 @@ class SingleCrawler(object):
 
         self.load_crawler(crawler_class, site["url"], ignore_regex)
 
-        # start the job. if in library_mode, do not stop the reactor and so on after this job has finished
-        # so that further jobs can be executed. it also needs to run in a thread since the reactor.run method seems
-        # to not return. also, scrapy will attempt to start a new reactor, which fails with an exception, but
-        # the code continues to run. we catch this excepion in the function 'start_process'.
+        # start the job. if in library_mode, do not
+        # stop the reactor and so on after this job has finished
+        # so that further jobs can be executed.
+        # it also needs to run in a thread since the reactor.run method seems
+        # to not return. also, scrapy will
+        # attempt to start a new reactor, which fails with an exception, but
+        # the code continues to run. we
+        # catch this excepion in the function 'start_process'.
         if library_mode:
             start_new_thread(
                 start_process,
@@ -224,33 +222,35 @@ class SingleCrawler(object):
                 if callable(supports_site):
                     try:
                         crawler_supports_site = supports_site(url)
-                    except Exception as e:
+                    except Exception as error:  # pylint: disable=broad-except
                         self.log.info(
-                            f"Crawler not supported due to: {str(e)}", exc_info=True
+                            "Crawler not supported due to: %s",
+                            str(error),
+                            exc_info=True,
                         )
                         crawler_supports_site = False
 
                     if crawler_supports_site:
                         self.log.debug("Using crawler %s for %s.", crawler, url)
                         return current
-                    elif (
+                    if (
                         crawler in self.cfg_crawler["fallbacks"]
                         and self.cfg_crawler["fallbacks"][crawler] is not None
                     ):
-                        self.log.warn(
-                            "Crawler %s not supported by %s. " "Trying to fall back.",
+                        self.log.warning(
+                            "Crawler %s not supported by %s. Trying to fall back.",
                             crawler,
                             url,
                         )
                         crawler = self.cfg_crawler["fallbacks"][crawler]
                     else:
                         self.log.error(
-                            "No crawlers (incl. fallbacks) " "found for url %s.", url
+                            "No crawlers (incl. fallbacks) found for url %s.", url
                         )
                         raise RuntimeError("No crawler found. Quit.")
             else:
                 self.log.warning(
-                    "The crawler %s has no " "supports_site-method defined", crawler
+                    "The crawler %s has no supports_site-method defined", crawler
                 )
                 return current
         self.log.error(
@@ -299,8 +299,9 @@ class SingleCrawler(object):
             shutil.rmtree(jobdir)
 
             self.log.info(
-                "Removed " + jobdir + " since '--resume' was not passed to"
-                " initial.py or this crawler was daemonized."
+                "Removed %s since '--resume' was not passed to"
+                " initial.py or this crawler was daemonized.",
+                jobdir,
             )
 
 

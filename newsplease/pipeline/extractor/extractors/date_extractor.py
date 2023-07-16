@@ -1,16 +1,12 @@
 import json
 import re
 from copy import deepcopy
+from urllib import request
 
 from bs4 import BeautifulSoup
 from dateutil.parser import parse
 
 from .abstract_extractor import AbstractExtractor
-
-try:
-    import urllib.request as urllib2
-except ImportError:
-    import urllib2
 
 # to improve performance, regex statements are compiled only once per module
 re_pub_date = re.compile(
@@ -36,11 +32,11 @@ class DateExtractor(AbstractExtractor):
 
         try:
             if html is None:
-                request = urllib2.Request(url)
+                req = request.Request(url)
                 # Using a browser user agent, decreases the change of sites blocking this request - just a suggestion
                 # request.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko)
                 # Chrome/41.0.2228.0 Safari/537.36')
-                html = urllib2.build_opener().open(request).read()
+                html = request.build_opener().open(req).read()
 
             html = BeautifulSoup(html, "lxml")
 

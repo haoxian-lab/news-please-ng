@@ -2,50 +2,25 @@
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
+# pylint: disable=unused-argument
 import datetime
 import json
 import logging
 import os.path
-import sys
 
 import psycopg2
 import pymysql
 from dateutil import parser as dateparser
 from elasticsearch import Elasticsearch
-from NewsArticle import NewsArticle
 from scrapy.exceptions import DropItem
+import pandas as pd
+from newsplease.news_article import NewsArticle
 
 from ..config import CrawlerConfig
 from .extractor import article_extractor
 
-if sys.version_info[0] < 3:
-    ConnectionError = OSError
 
-try:
-    import numpy as np
-    import pandas as pd
-except ImportError:
-    np = None
-    pd = None
-
-
-class HTMLCodeHandling(object):
-    """
-    Handles reponses to HTML responses other than 200 (accept).
-    As of 22.06.16 not active, but serves as an example of new
-    functionality
-    """
-
-    def process_item(self, item, spider):
-        # For the case where something goes wrong
-        if item["spider_response"].status != 200:
-            # Item is no longer processed in the pipeline
-            raise DropItem("%s: Non-200 response" % item["url"])
-        else:
-            return item
-
-
-class ArticleMasterExtractor(object):
+class ArticleMasterExtractor:
     """
     Parses the HTML response and extracts title, description,
     text, image and meta data of an article.
@@ -62,7 +37,7 @@ class ArticleMasterExtractor(object):
         return self.extractor.extract(item)
 
 
-class RSSCrawlCompare(object):
+class RSSCrawlCompare:
     """
     Compares the item's age to the current version in the DB.
     If the difference is greater than delta_time, then save the newer version.
@@ -131,7 +106,7 @@ class RSSCrawlCompare(object):
         self.conn.close()
 
 
-class MySQLStorage(object):
+class MySQLStorage:
     """
     Handles remote storage of the meta data in the DB
     """
@@ -254,7 +229,8 @@ class MySQLStorage(object):
         ) as error:
             self.log.error("Something went wrong in commit: %s", error)
 
-        # Move the old version from the CurrentVersion table to the ArchiveVersions table
+        # Move the old version from the CurrentVersion
+        # table to the ArchiveVersions table
         if old_version is not None:
             # Set descendant attribute
             try:
@@ -302,7 +278,7 @@ class MySQLStorage(object):
         self.conn.close()
 
 
-class ExtractedInformationStorage(object):
+class ExtractedInformationStorage:
     """
     Provides basic functionality for Storages
     """
@@ -324,7 +300,8 @@ class ExtractedInformationStorage(object):
     @staticmethod
     def extract_relevant_info(item):
         """
-        extracts from an item only fields that we want to output as extracted information
+        extracts from an item only fields that we want to
+        output as extracted information
         :rtype: object
         :param item:
         :return:
@@ -350,8 +327,7 @@ class ExtractedInformationStorage(object):
         }
 
         # clean values
-        for key in article:
-            value = article[key]
+        for key, value in article.items():
             if isinstance(value, str) and not value:
                 article[key] = None
 
@@ -361,8 +337,7 @@ class ExtractedInformationStorage(object):
     def datestring_to_date(text):
         if text:
             return dateparser.parse(text)
-        else:
-            return None
+        return None
 
     @staticmethod
     def convert_to_class(item):
@@ -434,6 +409,7 @@ class PostgresqlStorage(ExtractedInformationStorage):
 
     # init database connection
     def __init__(self):
+        super().__init__()
         # import logging
         self.log = logging.getLogger(__name__)
         self.cfg = CrawlerConfig.get_instance()
@@ -511,7 +487,8 @@ class PostgresqlStorage(ExtractedInformationStorage):
         except psycopg2.DatabaseError as error:
             self.log.error("Something went wrong in commit: %s", error)
 
-        # Move the old version from the CurrentVersion table to the ArchiveVersions table
+        # Move the old version from the
+        # CurrentVersion table to the ArchiveVersions table
         if old_version is not None:
             # Set descendant attribute
             try:
@@ -548,14 +525,18 @@ class InMemoryStorage(ExtractedInformationStorage):
     Stores extracted information in a dictionary in memory - for use with library mode.
     """
 
+    # pylint: disable=protected-access
     results = {}  # this is a static variable
 
     def process_item(self, item, spider):
-        # get the original url, so that the library class (or whoever wants to read this) can access the article
+        # get the original url, so that the library
+        # class (or whoever wants to read this) can access the article
         if "redirect_urls" in item._values["spider_response"].meta:
-            url = item._values["spider_response"].meta["redirect_urls"][0]
+            url = item._values["spider_response"].meta["redirect_urls"][
+                0
+            ]  # pylint: disable=protected-access
         else:
-            url = item._values["url"]
+            url = item._values["url"]  # pylint: disable=protected-access
         InMemoryStorage.results[
             url
         ] = ExtractedInformationStorage.extract_relevant_info(item)
@@ -564,6 +545,9 @@ class InMemoryStorage(ExtractedInformationStorage):
     @staticmethod
     def get_results():
         return InMemoryStorage.results
+
+
+# pylint: enable=protected-access
 
 
 class HtmlFileStorage(ExtractedInformationStorage):
@@ -606,7 +590,7 @@ class JsonFileStorage(ExtractedInformationStorage):
         os.makedirs(dir_, exist_ok=True)
 
         # Write JSON to local file system
-        with open(file_path, "w") as file_:
+        with open(file_path, "w", encoding="utf8") as file_:
             json.dump(
                 ExtractedInformationStorage.extract_relevant_info(item),
                 file_,
@@ -623,19 +607,20 @@ class ElasticsearchStorage(ExtractedInformationStorage):
 
     log = None
     cfg = None
-    es = None
+    es_client = None
     index_current = None
     index_archive = None
     mapping = None
     running = False
 
     def __init__(self):
+        super().__init__()
         self.log = logging.getLogger("elasticsearch.trace")
         self.log.addHandler(logging.NullHandler())
         self.cfg = CrawlerConfig.get_instance()
         self.database = self.cfg.section("Elasticsearch")
 
-        self.es = Elasticsearch(
+        self.es_client = Elasticsearch(
             hosts=[self.database["host"]],
             http_auth=(str(self.database["username"]), str(self.database["secret"])),
             verify_certs=self.database["use_ca_certificates"],
@@ -651,31 +636,41 @@ class ElasticsearchStorage(ExtractedInformationStorage):
 
         try:
             # check if server is available
-            self.es.ping()
+            self.es_client.ping()
 
-            # raise logging level due to indices.exists() habit of logging a warning if an index doesn't exist.
+            # raise logging level due to indices.exists()
+            # habit of logging a warning if an index doesn't exist.
             es_log = logging.getLogger("elasticsearch")
             es_level = es_log.getEffectiveLevel()
             es_log.setLevel("ERROR")
 
             # check if the necessary indices exist and create them if needed
-            if not self.es.indices.exists(index=self.index_current):
-                self.es.indices.create(index=self.index_current, ignore=[400, 404])
-                self.es.indices.put_mapping(index=self.index_current, body=self.mapping)
-            if not self.es.indices.exists(index=self.index_archive):
-                self.es.indices.create(index=self.index_archive, ignore=[400, 404])
-                self.es.indices.put_mapping(index=self.index_archive, body=self.mapping)
+            if not self.es_client.indices.exists(index=self.index_current):
+                self.es_client.options(ignore_status=[400, 404]).indices.create(
+                    index=self.index_current
+                )
+                self.es_client.indices.put_mapping(
+                    index=self.index_current, properties=self.mapping
+                )
+            if not self.es_client.indices.exists(index=self.index_archive):
+                self.es_client.options(ignore_status=[400, 404]).indices.create(
+                    index=self.index_archive
+                )
+                self.es_client.indices.put_mapping(
+                    index=self.index_archive, properties=self.mapping
+                )
             self.running = True
 
             # restore previous logging level
             es_log.setLevel(es_level)
 
-        except ConnectionError as error:
+        except (ConnectionError, OSError) as error:
             self.running = False
             self.log.error(
-                "Failed to connect to Elasticsearch, this module will be deactivated. "
-                "Please check if the database is running and the config is correct: %s"
-                % error
+                """Failed to connect to Elasticsearch, 
+                this module will be deactivated. Please check if 
+                the database is running and the config is correct: %s""",
+                error,
             )
 
     def process_item(self, item, spider):
@@ -685,39 +680,43 @@ class ElasticsearchStorage(ExtractedInformationStorage):
                 ancestor = None
 
                 # search for previous version
-                request = self.es.search(
+                request = self.es_client.search(
                     index=self.index_current,
-                    body={"query": {"match": {"url.keyword": item["url"]}}},
+                    query={"query": {"match": {"url.keyword": item["url"]}}},
                 )
                 if request["hits"]["total"]["value"] > 0:
                     # save old version into index_archive
                     old_version = request["hits"]["hits"][0]
                     old_version["_source"]["descendent"] = True
-                    self.es.index(index=self.index_archive, body=old_version["_source"])
+                    self.es_client.index(
+                        index=self.index_archive, document=old_version["_source"]
+                    )
                     version += 1
                     ancestor = old_version["_id"]
 
                 # save new version into old id of index_current
-                self.log.info("Saving to Elasticsearch: %s" % item["url"])
+                self.log.info("Saving to Elasticsearch: %s", item["url"])
                 extracted_info = ExtractedInformationStorage.extract_relevant_info(item)
                 extracted_info["ancestor"] = ancestor
                 extracted_info["version"] = version
-                self.es.index(
-                    index=self.index_current, id=ancestor, body=extracted_info
+                self.es_client.index(
+                    index=self.index_current, id=ancestor, document=extracted_info
                 )
 
             except ConnectionError as error:
                 self.running = False
                 self.log.error(
-                    "Lost connection to Elasticsearch, this module will be deactivated: %s"
-                    % error
+                    "Lost connection to Elasticsearch, \
+                    this module will be deactivated: %s",
+                    error,
                 )
         return item
 
 
-class DateFilter(object):
+class DateFilter:
     """
-    Filters articles based on their publishing date, articles with a date outside of a specified interval are dropped.
+    Filters articles based on their publishing date,
+    articles with a date outside of a specified interval are dropped.
     This module should be placed after the KM4 article extractor.
     """
 
@@ -737,7 +736,8 @@ class DateFilter(object):
 
         if self.start_date is None and self.end_date is None:
             self.log.error(
-                "DateFilter: No dates are defined, please check the configuration of this module."
+                "DateFilter: No dates are defined, \
+                please check the configuration of this module."
             )
         else:
             # create datetime objects from given dates
@@ -750,56 +750,55 @@ class DateFilter(object):
                     self.end_date = datetime.datetime.strptime(
                         str(self.end_date), "%Y-%m-%d %H:%M:%S"
                     )
-            except ValueError as error:
+            except ValueError:
                 self.start_date = None
                 self.end_date = None
                 self.log.error(
-                    "DateFilter: Couldn't read start or end date of the specified interval. "
+                    "DateFilter: Couldn't read start \
+                        or end date of the specified interval. "
                     "The Filter is now deactivated."
-                    "Please check the configuration of this module and be sure follow the format "
+                    "Please check the configuration of this \
+                        module and be sure follow the format "
                     "'yyyy-mm-dd hh:mm:ss' for dates or set the variables to None."
                 )
 
     def process_item(self, item, spider):
         # Check if date could be extracted
-        if item["article_publish_date"] is None and self.strict_mode:
-            raise DropItem(
-                "DateFilter: %s: Publishing date is missing and strict mode is enabled."
-                % item["url"]
-            )
-        elif item["article_publish_date"] is None:
+        if item["article_publish_date"] is None:
+            if self.strict_mode:
+                raise DropItem(
+                    f"DateFilter: {item['url']}: Publishing date \
+                        is missing and strict mode is enabled."
+                )
             return item
-        else:
-            # Create datetime object
-            try:
-                publish_date = datetime.datetime.strptime(
-                    str(item["article_publish_date"]), "%Y-%m-%d %H:%M:%S"
-                )
-            except ValueError as error:
-                self.log.warning(
-                    "DateFilter: Extracted date has the wrong format: %s - %s"
-                    % (item["article_publishing_date"], item["url"])
-                )
-                if self.strict_mode:
-                    raise DropItem(
-                        "DateFilter: %s: Dropped due to wrong date format: %s"
-                        % (item["url"], item["publish_date"])
-                    )
-                else:
-                    return item
-            # Check interval boundaries
-            if self.start_date is not None and self.start_date > publish_date:
+        # Create datetime object
+        try:
+            publish_date = datetime.datetime.strptime(
+                str(item["article_publish_date"]), "%Y-%m-%d %H:%M:%S"
+            )
+        except ValueError as exc:
+            self.log.warning(
+                "DateFilter: Extracted date has the wrong format: %s - %s",
+                item["article_publishing_date"],
+                item["url"],
+            )
+            if self.strict_mode:
                 raise DropItem(
-                    "DateFilter: %s: Article is too old: %s"
-                    % (item["url"], publish_date)
-                )
-            elif self.end_date is not None and self.end_date < publish_date:
-                raise DropItem(
-                    "DateFilter: %s: Article is too young: %s "
-                    % (item["url"], publish_date)
-                )
-            else:
-                return item
+                    f"DateFilter: {item['url']}: Dropped due to \
+                        wrong date format: {item['publish_date']}"
+                ) from exc
+
+            return item
+        # Check interval boundaries
+        if self.start_date is not None and self.start_date > publish_date:
+            raise DropItem(
+                f"DateFilter: {item['url']}: Article is too old: {publish_date}"
+            )
+        if self.end_date is not None and self.end_date < publish_date:
+            raise DropItem(
+                f"DateFilter: {item['url']}: Article is too young: {publish_date}"
+            )
+        return item
 
 
 class PandasStorage(ExtractedInformationStorage):
@@ -816,8 +815,7 @@ class PandasStorage(ExtractedInformationStorage):
     running = False
 
     def __init__(self):
-        if np is None:
-            raise ModuleNotFoundError("Using PandasStorage requires numpy and pandas")
+        super().__init__()
         self.log = logging.getLogger(__name__)
         self.cfg = CrawlerConfig.get_instance()
         self.database = self.cfg.section("Pandas")
@@ -856,7 +854,7 @@ class PandasStorage(ExtractedInformationStorage):
                 if col not in self.df.columns:
                     raise KeyError(col)
         except FileNotFoundError:
-            self.df = pd.DataFrame(columns=columns.keys())
+            self.df = pd.DataFrame(columns=columns)
             self.log.info("Created new Pandas file at '%s'", self.full_path)
             self.df.set_index(df_index, inplace=True, drop=False)
         except KeyError as e:
@@ -886,7 +884,7 @@ class PandasStorage(ExtractedInformationStorage):
         self.df.loc[item["url"]] = article
         return item
 
-    def close_spider(self, _spider):
+    def close_spider(self, spider):
         """
         Write out to file
         """

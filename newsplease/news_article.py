@@ -1,4 +1,4 @@
-class NewsArticle(object):
+class NewsArticle:
     """
     Class representing a single news article containing all the information that news-please can extract.
     """
