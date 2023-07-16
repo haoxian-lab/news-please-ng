@@ -8,6 +8,7 @@ from lxml import html
 from .abstract_extractor import AbstractExtractor
 
 
+# pylint: disable=unnecessary-lambda,too-many-branches
 class LangExtractor(AbstractExtractor):
     """This class implements LangDetect as an article extractor but it can only
     detect the extracted language (en, de, ...).
@@ -35,21 +36,21 @@ class LangExtractor(AbstractExtractor):
         if lang is None:
             lang = root.get("xml:lang")
 
-        # Check for general meta tags
-        if lang is None:
+            # Check for general meta tags
+
             meta = root.cssselect('meta[name="language"]')
             if len(meta) > 0:
                 lang = meta[0].get("content")
 
-        # Check for open graph tags
-        if lang is None:
+            # Check for open graph tags
+
             meta = root.cssselect('meta[property="og:locale"]')
             if len(meta) > 0:
                 lang = meta[0].get("content")
 
-        # Look for <article> elements and inspect the
-        # one with the largest payload with langdetect
-        if lang is None:
+            # Look for <article> elements and inspect the
+            # one with the largest payload with langdetect
+
             article_list = []
             for article in root.xpath("//article"):
                 article_list.append(re.sub(r"\s+", " ", article.text_content().strip()))
@@ -64,8 +65,8 @@ class LangExtractor(AbstractExtractor):
                     else:
                         break
 
-        # Analyze the whole body with langdetect
-        if lang is None:
+            # Analyze the whole body with langdetect
+
             try:
                 lang = detect(root.text_content().strip())
             except LangDetectException:

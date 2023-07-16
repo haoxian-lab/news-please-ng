@@ -1,7 +1,5 @@
 from abc import ABCMeta, abstractmethod
 
-from ..article_candidate import ArticleCandidate
-
 # pylint: disable=unused-argument
 
 
@@ -46,16 +44,3 @@ class AbstractExtractor:
         :param item: A NewscrawlerItem to parse.
         :return: ArticleCandidate containing the recovered article data.
         """
-
-        article_candidate = ArticleCandidate()
-        article_candidate.extractor = self._name()
-        # pylint: disable=assignment-from-no-return
-        article_candidate.title = self._title(item)
-        article_candidate.description = self._description(item)
-        article_candidate.text = self._text(item)
-        article_candidate.topimage = self._topimage(item)
-        article_candidate.author = self._author(item)
-        article_candidate.publish_date = self._publish_date(item)
-        article_candidate.language = self._language(item)
-
-        return article_candidate

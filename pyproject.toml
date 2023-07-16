@@ -76,3 +76,6 @@ extension-pkg-whitelist = ["pydantic"]
 
 [tool.pylint.BASIC]
 good-names = ["a", "b", "c", "d", "e", "df", "i", "logger", "n", "tz"]
+
+[too.pylint.MASTER]
+ignore = "newsplease/examples"

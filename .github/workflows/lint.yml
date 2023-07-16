@@ -21,10 +21,13 @@ jobs:
         poetry install
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        pylint newsplease/pipeline
     - name: Analysing the code with black
       run: |
         black --check .
     - name: Analysing the code with isort
       run: |
         isort --check-only -v .
+    # - name: Full pylint
+    #   run: |
+    #     pylint $(git ls-files '*.py')

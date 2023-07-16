@@ -294,8 +294,8 @@ class ExtractedInformationStorage:
     def ensure_str(text):
         if isinstance(text, str):
             return text
-        else:
-            return text.decode("utf-8")
+
+        return text.decode("utf-8")
 
     @staticmethod
     def extract_relevant_info(item):

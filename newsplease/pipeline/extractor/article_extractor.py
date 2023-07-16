@@ -8,7 +8,8 @@ from .extractors.abstract_extractor import AbstractExtractor
 
 
 class Extractor:
-    """This class initializes all extractors and saves the results of them. When adding a new extractor, it needs to
+    """This class initializes all extractors and saves
+        the results of them. When adding a new extractor, it needs to
     be initialized here and added to list_extractor.
     """
 
@@ -16,7 +17,8 @@ class Extractor:
         """
         Initializes all the extractors, comparers and the cleaner.
 
-        :param extractor_list: List of strings containing all extractors to be initialized.
+        :param extractor_list: List of strings
+            containing all extractors to be initialized.
         """
 
         def proc_instance(instance):
@@ -58,7 +60,8 @@ class Extractor:
         self.comparer = Comparer()
 
     def extract(self, item):
-        """Runs the HTML-response trough a list of initialized extractors, a cleaner and compares the results.
+        """Runs the HTML-response trough a list of initialized extractors,
+            a cleaner and compares the results.
 
         :param item: NewscrawlerItem to be processed.
         :return: An updated NewscrawlerItem including the results of the extraction
