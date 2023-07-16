@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 
 from newspaper import Article
 
@@ -12,14 +12,15 @@ class NewspaperExtractor(AbstractExtractor):
     """
 
     def __init__(self):
-        self.log = logging.getLogger(__name__)
+        self.log = logger
         self.name = "newspaper"
 
     def _article_kwargs(self):
         return {}
 
     def extract(self, item):
-        """Creates an instance of Article without a Download and returns an ArticleCandidate with the results of
+        """Creates an instance of Article without a Download and
+        returns an ArticleCandidate with the results of
         parsing the HTML-Code.
 
         :param item: A NewscrawlerItem to parse.
@@ -46,10 +47,11 @@ class NewspaperExtractor(AbstractExtractor):
                 article_candidate.publish_date = article.publish_date.strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
-            except ValueError as exception:
+            except ValueError:
                 self.log.debug(
-                    "%s: Newspaper failed to extract the date in the supported format,"
-                    "Publishing date set to None" % item["url"]
+                    "%s: Newspaper failed to extract the date in the supported format,\
+                    Publishing date set to None",
+                    item["url"],
                 )
         article_candidate.language = article.meta_lang
 

@@ -23,7 +23,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.10"            # for structural pattern matching since 3.10
+python = "^3.9"
 lxml = "^4.9.2"
 Scrapy = "^2.9.0"
 pymysql = "^1.0.3"

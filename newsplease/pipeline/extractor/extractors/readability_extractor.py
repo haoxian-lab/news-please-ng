@@ -5,6 +5,8 @@ from readability import Document
 from ..article_candidate import ArticleCandidate
 from .abstract_extractor import AbstractExtractor
 
+# pylint: disable=assignment-from-no-return
+
 
 class ReadabilityExtractor(AbstractExtractor):
     """This class implements Readability as an article extractor. Readability is
@@ -16,7 +18,8 @@ class ReadabilityExtractor(AbstractExtractor):
         self.name = "readability"
 
     def extract(self, item):
-        """Creates an readability document and returns an ArticleCandidate containing article title and text.
+        """Creates an readability document and returns an
+        ArticleCandidate containing article title and text.
 
         :param item: A NewscrawlerItem to parse.
         :return: ArticleCandidate containing the recovered article data.

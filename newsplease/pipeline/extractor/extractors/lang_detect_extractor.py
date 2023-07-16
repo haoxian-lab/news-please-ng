@@ -19,7 +19,8 @@ class LangExtractor(AbstractExtractor):
         self.langcode_pattern = re.compile(r"\b[a-zA-Z]{2}(?=([-_]|\b))")
 
     def _language(self, item):
-        """Returns the language of the extracted article by analyzing metatags and inspecting the visible text
+        """Returns the language of the extracted
+        article by analyzing metatags and inspecting the visible text
         with langdetect"""
 
         response = item["spider_response"].body
@@ -46,7 +47,8 @@ class LangExtractor(AbstractExtractor):
             if len(meta) > 0:
                 lang = meta[0].get("content")
 
-        # Look for <article> elements and inspect the one with the largest payload with langdetect
+        # Look for <article> elements and inspect the
+        # one with the largest payload with langdetect
         if lang is None:
             article_list = []
             for article in root.xpath("//article"):

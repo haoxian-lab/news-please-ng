@@ -2,7 +2,8 @@ import itertools
 
 
 class ComparerTitle:
-    """This class compares the title if the list of ArticleCandidates and sends the result back to the Comparer."""
+    """This class compares the title if the list of
+    ArticleCandidates and sends the result back to the Comparer."""
 
     def find_matches(self, list_title):
         """Checks if there are any matches between extracted titles.
@@ -53,11 +54,12 @@ class ComparerTitle:
 
         return (min(list_length_string))[1]
 
-    def extract(self, item, list_article_candidate):
+    def extract(self, item, list_article_candidate):  # pylint: disable=unused-argument
         """Compares the extracted titles.
 
         :param item: The corresponding NewscrawlerItem
-        :param list_article_candidate: A list, the list of ArticleCandidate-Objects which have been extracted
+        :param list_article_candidate: A list, the list of
+            ArticleCandidate-Objects which have been extracted
         :return: A string, the most likely title
         """
         list_title = []
@@ -78,8 +80,7 @@ class ComparerTitle:
         # Returns the matched title if there is one, else returns the shortest title
         if matched_title:
             return matched_title
-        else:
-            if list_title_matches:
-                return self.choose_shortest_title(set(list_title_matches))
-            else:
-                return self.choose_shortest_title(list_title)
+        if list_title_matches:
+            return self.choose_shortest_title(set(list_title_matches))
+
+        return self.choose_shortest_title(list_title)
