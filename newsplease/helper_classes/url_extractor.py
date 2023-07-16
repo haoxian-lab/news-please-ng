@@ -3,18 +3,9 @@ Helper class for url extraction.
 """
 import os
 import re
-
+from urllib.parse import urlparse
+from urllib import request
 from newsplease.config import CrawlerConfig
-
-try:
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
-
-try:
-    import urllib2
-except ImportError:
-    import urllib.request as urllib2
 
 # len(".markdown") = 9
 MAX_FILE_EXTENSION_LENGTH = 9
@@ -67,7 +58,7 @@ class UrlExtractor(object):
         :return str: actual address of url
         """
         url = UrlExtractor.url_to_request_with_agent(url)
-        opener = urllib2.build_opener(urllib2.HTTPRedirectHandler)
+        opener = request.build_opener(request.HTTPRedirectHandler)
         return opener.open(url).url
 
     @staticmethod
@@ -98,18 +89,15 @@ class UrlExtractor(object):
         else:
             url_netloc = UrlExtractor.get_allowed_domain(parsed.netloc, False)
 
-        robots = "{url.scheme}://{url_netloc}/robots.txt".format(
-            url=parsed, url_netloc=url_netloc
-        )
+        robots = f"{parsed.scheme}://{url_netloc}/robots.txt"
         robots_req = UrlExtractor.url_to_request_with_agent(robots)
         try:
-            urllib2.urlopen(robots_req)
-            return robots
-        except:
+            with request.urlopen(robots_req) as robots:
+                return robots
+        except Exception as exc:  # pylint: disable=broad-except
             if allow_subdomains:
                 return UrlExtractor.get_sitemap_url(url, False)
-            else:
-                raise Exception("Fatal: no robots.txt found.")
+            raise FileNotFoundError("Fatal: no robots.txt found.") from exc
 
     @staticmethod
     def sitemap_check(url):
@@ -122,10 +110,9 @@ class UrlExtractor(object):
         """
         url = UrlExtractor.get_sitemap_url(url, True)
         url = UrlExtractor.url_to_request_with_agent(url)
-        response = urllib2.urlopen(url)
-
-        # Check if "Sitemap" is set
-        return "Sitemap:" in response.read().decode("utf-8")
+        with request.urlopen(url) as response:
+            # Check if "Sitemap" is set
+            return "Sitemap:" in response.read().decode("utf-8")
 
     def get_rss_url(self, response):
         """
@@ -168,12 +155,12 @@ class UrlExtractor(object):
         # the following for, if not and break statement
         # index = [index for index in range(len(splitted_url))
         #          if not re.search(domain, splitted_url[index]) is None][0]
-        for index in range(len(splitted_url)):
-            if not re.search(domain, splitted_url[index]) is None:
-                if splitted_url[-1] is "":
-                    splitted_url = splitted_url[index + 1 : -2]
+        for i, _ in enumerate(splitted_url):
+            if not re.search(domain, splitted_url[i]) is None:
+                if splitted_url[-1] == "":
+                    splitted_url = splitted_url[i + 1 : -2]
                 else:
-                    splitted_url = splitted_url[index + 1 : -1]
+                    splitted_url = splitted_url[i + 1 : -1]
                 break
 
         return "_".join(splitted_url)
@@ -197,4 +184,4 @@ class UrlExtractor(object):
     def url_to_request_with_agent(url):
         options = CrawlerConfig.get_instance().get_scrapy_options()
         user_agent = options["USER_AGENT"]
-        return urllib2.Request(url, headers={"user-agent": user_agent})
+        return request.Request(url, headers={"user-agent": user_agent})

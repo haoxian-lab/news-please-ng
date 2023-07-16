@@ -8,6 +8,7 @@ from .url_extractor import UrlExtractor
 
 # to improve performance, regex statements are compiled only once per module
 re_url_root = re.compile(r"https?://[a-z]+.")
+#  pylint: disable=unused-argument
 
 
 class Heuristics(HeuristicsManager):
@@ -90,9 +91,9 @@ class Heuristics(HeuristicsManager):
 
         # This regex checks, if a link containing site_domain as domain
         # is contained in a string.
-        site_regex = r"href=[\"'][^\/]*\/\/(?:[^\"']*\.|)%s[\"'\/]" % domain
+        site_regex = rf"href=[\"'][^\/]*\/\/(?:[^\"']*\.|){domain}[\"'\/]"
         for i in range(1, 7):
-            for headline in response.xpath("//h%s" % i).extract():
+            for headline in response.xpath(f"//h{i}").extract():
                 h_all += 1
                 if "href" in headline and (
                     not check_self or re.search(site_regex, headline) is not None
@@ -106,7 +107,7 @@ class Heuristics(HeuristicsManager):
         min_headlines = self.cfg_heuristics["min_headlines_for_linked_test"]
         if min_headlines > h_all:
             self.log.debug(
-                "Linked headlines test: Not enough headlines " "(%s < %s): Passing!",
+                "Linked headlines test: Not enough headlines (%s < %s): Passing!",
                 h_all,
                 min_headlines,
             )

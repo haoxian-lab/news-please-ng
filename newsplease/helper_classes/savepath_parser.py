@@ -34,7 +34,7 @@ re_max_url_file = re.compile(r"%max_url_file_name")
 re_appendmd5_max_url_file = re.compile(r"%appendmd5_max_url_file_name")
 
 
-class SavepathParser(object):
+class SavepathParser:
     """
     This class contains methods to parse the given savepath
     """
@@ -99,14 +99,11 @@ class SavepathParser(object):
         if len(component) > size:
             if size > 32:
                 component_size = size - 32 - 1
-                return "%s_%s" % (
-                    component[:component_size],
-                    hashlib.md5(component.encode("utf-8")).hexdigest(),
-                )
-            else:
-                return hashlib.md5(component.encode("utf-8")).hexdigest()[:size]
-        else:
-            return component
+                return f"{component[:component_size]}_\
+                    {hashlib.md5(component.encode('utf-8')).hexdigest()}"
+            return hashlib.md5(component.encode("utf-8")).hexdigest()[:size]
+
+        return component
 
     def get_savepath(self, url, savepath=None):
         """

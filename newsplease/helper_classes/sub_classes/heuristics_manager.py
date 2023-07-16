@@ -1,13 +1,11 @@
+from ast import literal_eval
 import logging
 import re
 
-try:
-    basestring = basestring
-except NameError:
-    basestring = (str, bytes)
+basestring = (str, bytes)
 
 
-class HeuristicsManager(object):
+class HeuristicsManager:
     """
     This class is for managing the heuristics of
     a heuristics file (../heuristics.py)
@@ -56,10 +54,10 @@ class HeuristicsManager(object):
             heuristic_func = getattr(self, heuristic)
             result = heuristic_func(response, site)
             check = self.__evaluate_result(result, condition)
-            statement = re.sub(r"\b%s\b" % heuristic, str(check), statement)
+            statement = re.sub(rf"\b{heuristic}\b", str(check), statement)
 
             self.log.debug(
-                "Checking heuristic (%s)" " result (%s) on condition (%s): %s",
+                "Checking heuristic (%s) result (%s) on condition (%s): %s",
                 heuristic,
                 result,
                 condition,
@@ -67,7 +65,7 @@ class HeuristicsManager(object):
             )
 
         self.log.debug("Condition (evaluated): %s", statement)
-        is_article = eval(statement)
+        is_article = literal_eval(statement)
         self.log.debug("Article accepted: %s", is_article)
         return is_article
 
@@ -97,7 +95,7 @@ class HeuristicsManager(object):
             disalloweds = disalloweds.replace(allowed, " ")
 
         for heuristic, _ in heuristics.items():
-            disalloweds = re.sub(r"\b%s\b" % heuristic, " ", disalloweds)
+            disalloweds = re.sub(rf"\b{heuristic}\b", " ", disalloweds)
 
         disalloweds = disalloweds.split(" ")
         for disallowed in disalloweds:
@@ -108,7 +106,7 @@ class HeuristicsManager(object):
                     " will be ignored: %s",
                     disallowed,
                 )
-                condition = re.sub(r"\b%s\b" % disallowed, "True", condition)
+                condition = re.sub(rf"\b{disallowed}\b", "True", condition)
 
         self.__heuristics_condition = condition
         # Now condition should just consits of not, and, or, (, ), and all
