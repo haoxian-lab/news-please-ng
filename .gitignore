@@ -11,3 +11,7 @@ news-please.iml
 venv/
 .vscode
 *.local
+k8s/base/config*
+k8s/base/secret*
+k8s/base/sitelist*
+k8s/base/generated*
