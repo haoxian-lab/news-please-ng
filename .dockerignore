@@ -2,3 +2,4 @@ misc
 dist
 news_please.egg-info
 .github
+k8s
