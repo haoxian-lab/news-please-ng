@@ -1,40 +1,33 @@
-import logging
+import builtins
 import os
 import shutil
 import signal
 import sys
 import threading
 import time
-from distutils.dir_util import copy_tree
 from subprocess import Popen
 
 import plac
-import pymysql
 import psycopg2
+import pymysql
 from elasticsearch import Elasticsearch
-from scrapy.utils.log import configure_logging
+from loguru import logger
+
+from newsplease.config import CrawlerConfig, JsonConfig
+from newsplease.helper_classes.savepath_parser import SavepathParser
 
 cur_path = os.path.dirname(os.path.realpath(__file__))
 par_path = os.path.dirname(cur_path)
 sys.path.append(cur_path)
 sys.path.append(par_path)
-from newsplease.helper_classes.savepath_parser import SavepathParser
-from newsplease.config import JsonConfig
-from newsplease.config import CrawlerConfig
-
-try:
-    import builtins
-except ImportError:
-    from future import builtins
-if sys.version_info[0] < 3:
-    ConnectionError = OSError
 
 
-class NewsPleaseLauncher(object):
+class NewsPleaseLauncher:
     """
     This class is supposed to be called initially to start all processes.  It
     sets up and manages all crawlers.
     """
+
     python_command = None
     crawlers = []
     cfg = None
@@ -60,8 +53,17 @@ class NewsPleaseLauncher(object):
 
     __single_crawler = False
 
-    def __init__(self, cfg_directory_path, is_resume, is_reset_elasticsearch,
-        is_reset_json, is_reset_mysql, is_reset_postgresql, is_no_confirm, library_mode=False):
+    def __init__(
+        self,
+        cfg_directory_path,
+        is_resume,
+        is_reset_elasticsearch,
+        is_reset_json,
+        is_reset_mysql,
+        is_reset_postgresql,
+        is_no_confirm,
+        library_mode=False,
+    ):
         """
         The constructor of the main class, thus the real entry point to the tool.
         :param cfg_file_path:
@@ -72,8 +74,7 @@ class NewsPleaseLauncher(object):
         :param is_reset_postgresql:
         :param is_no_confirm:
         """
-        configure_logging({"LOG_LEVEL": "ERROR"})
-        self.log = logging.getLogger(__name__)
+        self.log = logger
 
         # other parameters
         self.shall_resume = is_resume
@@ -84,7 +85,7 @@ class NewsPleaseLauncher(object):
         # modules of this project in relation to this script's dir
         # example: sitemap_crawler can import UrlExtractor via
         #   from newsplease.helper_classderes.url_extractor import UrlExtractor
-        os.environ['CColon'] = os.path.abspath(os.path.dirname(__file__))
+        os.environ["CColon"] = os.path.abspath(os.path.dirname(__file__))
 
         # set stop handlers
         self.set_stop_handler()
@@ -98,7 +99,9 @@ class NewsPleaseLauncher(object):
             self.cfg_directory_path = self.get_expanded_path(cfg_directory_path)
         else:
             # if no path was given by the user, use default
-            self.cfg_directory_path = self.get_expanded_path(self.config_directory_default_path)
+            self.cfg_directory_path = self.get_expanded_path(
+                self.config_directory_default_path
+            )
         # init cfg path if empty
         self.init_config_file_path_if_empty()
         self.cfg_file_path = self.cfg_directory_path + self.config_file_default_name
@@ -120,10 +123,17 @@ class NewsPleaseLauncher(object):
         if is_reset_elasticsearch:
             self.reset_elasticsearch()
         # close the process
-        if is_reset_elasticsearch or is_reset_json or is_reset_mysql or is_reset_postgresql:
+        if (
+            is_reset_elasticsearch
+            or is_reset_json
+            or is_reset_mysql
+            or is_reset_postgresql
+        ):
             sys.exit(0)
 
-        self.json_file_path = self.cfg_directory_path + self.cfg.section('Files')['url_input_file_name']
+        self.json_file_path = (
+            self.cfg_directory_path + self.cfg.section("Files")["url_input_file_name"]
+        )
 
         self.json = JsonConfig.get_instance()
         self.json.setup(self.json_file_path)
@@ -131,13 +141,16 @@ class NewsPleaseLauncher(object):
         self.crawler_list = self.CrawlerList()
         self.daemon_list = self.DaemonList()
 
-        self.__single_crawler = self.get_abs_file_path("./single_crawler.py", True, False)
+        self.__single_crawler = self.get_abs_file_path(
+            "./single_crawler.py", True, False
+        )
 
         self.manage_crawlers()
 
     def set_stop_handler(self):
         """
-        Initializes functions that are invoked when the user or OS wants to kill this process.
+        Initializes functions that are invoked when the
+            user or OS wants to kill this process.
         :return:
         """
         signal.signal(signal.SIGTERM, self.graceful_stop)
@@ -165,32 +178,28 @@ class NewsPleaseLauncher(object):
             if "daemonize" in site:
                 self.daemon_list.add_daemon(index, site["daemonize"])
             elif "additional_rss_daemon" in site:
-                self.daemon_list.add_daemon(index,
-                                            site["additional_rss_daemon"])
+                self.daemon_list.add_daemon(index, site["additional_rss_daemon"])
                 self.crawler_list.append_item(index)
             else:
                 self.crawler_list.append_item(index)
 
-        num_threads = self.cfg.section('Crawler')[
-            'number_of_parallel_crawlers']
+        num_threads = self.cfg.section("Crawler")["number_of_parallel_crawlers"]
         if self.crawler_list.len() < num_threads:
             num_threads = self.crawler_list.len()
 
         for _ in range(num_threads):
-            thread = threading.Thread(target=self.manage_crawler,
-                                      args=(),
-                                      kwargs={})
+            thread = threading.Thread(target=self.manage_crawler, args=(), kwargs={})
             self.threads.append(thread)
             thread.start()
 
-        num_daemons = self.cfg.section('Crawler')['number_of_parallel_daemons']
+        num_daemons = self.cfg.section("Crawler")["number_of_parallel_daemons"]
         if self.daemon_list.len() < num_daemons:
             num_daemons = self.daemon_list.len()
 
         for _ in range(num_daemons):
-            thread_daemonized = threading.Thread(target=self.manage_daemon,
-                                                 args=(),
-                                                 kwargs={})
+            thread_daemonized = threading.Thread(
+                target=self.manage_daemon, args=(), kwargs={}
+            )
             self.threads_daemonized.append(thread_daemonized)
             thread_daemonized.start()
 
@@ -250,34 +259,36 @@ class NewsPleaseLauncher(object):
         :param int daemonize: Bool if the crawler is supposed to be daemonized
                               (to delete the JOBDIR)
         """
-        call_process = [sys.executable,
-                        self.__single_crawler,
-                        self.cfg_file_path,
-                        self.json_file_path,
-                        "%s" % index,
-                        "%s" % self.shall_resume,
-                        "%s" % daemonize]
+        call_process = [
+            sys.executable,
+            self.__single_crawler,
+            self.cfg_file_path,
+            self.json_file_path,
+            str(index),
+            str(self.shall_resume),
+            str(daemonize),
+        ]
 
         self.log.debug("Calling Process: %s", call_process)
 
-        crawler = Popen(call_process,
-                        stderr=None,
-                        stdout=None)
+        crawler = Popen(
+            call_process, stderr=None, stdout=None
+        )  # pylint: disable=consider-using-with
         crawler.communicate()
         self.crawlers.append(crawler)
 
-    def graceful_stop(self, signal_number=None, stack_frame=None):
+    def graceful_stop(self, signal_number=None):
         """
         This function will be called when a graceful-stop is initiated.
         """
         stop_msg = "Hard" if self.shutdown else "Graceful"
         if signal_number is None:
-            self.log.info("%s stop called manually. "
-                          "Shutting down.", stop_msg)
+            self.log.info(f"{stop_msg} stop called manually. \n Shutting down...")
         else:
-            self.log.info("%s stop called by signal #%s. Shutting down."
-                          "Stack Frame: %s",
-                          stop_msg, signal_number, stack_frame)
+            self.log.info(
+                f"{stop_msg} stop called by signal #{signal_number}. Shutting down."
+                "Stack Frame: {stack_frame}"
+            )
         self.shutdown = True
         self.crawler_list.stop()
         self.daemon_list.stop()
@@ -286,7 +297,8 @@ class NewsPleaseLauncher(object):
 
     def init_config_file_path_if_empty(self):
         """
-        if the config file path does not exist, this function will initialize the path with a default
+        if the config file path does not exist,
+            this function will initialize the path with a default.
         config file
         :return
         """
@@ -294,20 +306,21 @@ class NewsPleaseLauncher(object):
         if os.path.exists(self.cfg_directory_path):
             return
 
-        user_choice = 'n'
+        user_choice = "n"
         if self.no_confirm:
-            user_choice = 'y'
+            user_choice = "y"
         else:
             sys.stdout.write(
-                "Config directory does not exist at '" + os.path.abspath(self.cfg_directory_path) + "'. "
-                + "Should a default configuration be created at this path? [Y/n] ")
-            if sys.version_info[0] < 3:
-                user_choice = raw_input()
-            else:
-                user_choice = input()
+                "Config directory does not exist at '"
+                + os.path.abspath(self.cfg_directory_path)
+                + "'. "
+                + "Should a default configuration be created at this path? [Y/n] "
+            )
+
+            user_choice = input()
             user_choice = user_choice.lower().replace("yes", "y").replace("no", "n")
 
-        if not user_choice or user_choice == '':  # the default is yes
+        if not user_choice or user_choice == "":  # the default is yes
             user_choice = "y"
         if "y" not in user_choice and "n" not in user_choice:
             sys.stderr.write("Wrong input, aborting.")
@@ -317,7 +330,9 @@ class NewsPleaseLauncher(object):
             sys.exit(1)
 
         # copy the default config file to the new path
-        copy_tree(os.environ['CColon'] + os.path.sep + 'config', self.cfg_directory_path)
+        shutil.copytree(
+            os.environ["CColon"] + os.path.sep + "config", self.cfg_directory_path
+        )
         return
 
     def get_expanded_path(self, path):
@@ -326,13 +341,14 @@ class NewsPleaseLauncher(object):
         :param path:
         :return:
         """
-        if path.startswith('~'):
-            return os.path.expanduser('~') + path[1:]
+        if path.startswith("~"):
+            return os.path.expanduser("~") + path[1:]
         else:
             return path
 
-    def get_abs_file_path(self, rel_file_path,
-                          quit_on_error=None, check_relative_to_path=True):
+    def get_abs_file_path(
+        self, rel_file_path, quit_on_error=None, check_relative_to_path=True
+    ):
         """
         Returns the absolute file path of the given [relative] file path
         to either this script or to the config file.
@@ -346,16 +362,17 @@ class NewsPleaseLauncher(object):
         :raises RuntimeError: if the file path does not exist and
                               quit_on_error is True
         """
-        if self.cfg_file_path is not None and \
-                check_relative_to_path and \
-                not self.cfg.section('Files')['relative_to_start_processes_file']:
+        if (
+            self.cfg_file_path is not None
+            and check_relative_to_path
+            and not self.cfg.section("Files")["relative_to_start_processes_file"]
+        ):
             script_dir = os.path.dirname(self.cfg_file_path)
         else:
             # absolute dir this script is in
             script_dir = os.path.dirname(__file__)
 
-        abs_file_path = os.path.abspath(
-            os.path.join(script_dir, rel_file_path))
+        abs_file_path = os.path.abspath(os.path.join(script_dir, rel_file_path))
 
         if not os.path.exists(abs_file_path):
             self.log.error(abs_file_path + " does not exist.")
@@ -371,16 +388,17 @@ class NewsPleaseLauncher(object):
 
         confirm = self.no_confirm
 
-        print("""
+        print(
+            """
 Cleanup MySQL database:
     This will truncate all tables and reset the whole database.
-""")
+"""
+        )
 
         if not confirm:
-            confirm = 'yes' in builtins.input(
-                """
-    Do you really want to do this? Write 'yes' to confirm: {yes}"""
-                    .format(yes='yes' if confirm else ''))
+            confirm = "yes" in builtins.input(
+                "Do you really want to do this? Write 'yes' to confirm:"
+            )
 
         if not confirm:
             print("Did not type yes. Thus aborting.")
@@ -390,18 +408,25 @@ Cleanup MySQL database:
 
         try:
             # initialize DB connection
-            self.conn = pymysql.connect(host=self.mysql["host"],
-                                        port=self.mysql["port"],
-                                        db=self.mysql["db"],
-                                        user=self.mysql["username"],
-                                        passwd=self.mysql["password"])
+            self.conn = pymysql.connect(
+                host=self.mysql["host"],
+                port=self.mysql["port"],
+                db=self.mysql["db"],
+                user=self.mysql["username"],
+                passwd=self.mysql["password"],
+            )
             self.cursor = self.conn.cursor()
 
             self.cursor.execute("TRUNCATE TABLE CurrentVersions")
             self.cursor.execute("TRUNCATE TABLE ArchiveVersions")
             self.conn.close()
-        except (pymysql.err.OperationalError, pymysql.ProgrammingError, pymysql.InternalError,
-                pymysql.IntegrityError, TypeError) as error:
+        except (
+            pymysql.err.OperationalError,
+            pymysql.ProgrammingError,
+            pymysql.InternalError,
+            pymysql.IntegrityError,
+            TypeError,
+        ) as error:
             self.log.error("Database reset error: %s", error)
 
     def reset_postgresql(self):
@@ -411,16 +436,17 @@ Cleanup MySQL database:
 
         confirm = self.no_confirm
 
-        print("""
+        print(
+            """
 Cleanup Postgresql database:
     This will truncate all tables and reset the whole database.
-""")
+"""
+        )
 
         if not confirm:
-            confirm = 'yes' in builtins.input(
-                """
-    Do you really want to do this? Write 'yes' to confirm: {yes}"""
-                    .format(yes='yes' if confirm else ''))
+            confirm = "yes" in builtins.input(
+                "Do you really want to do this? Write 'yes' to confirm:"
+            )
 
         if not confirm:
             print("Did not type yes. Thus aborting.")
@@ -430,11 +456,13 @@ Cleanup Postgresql database:
 
         try:
             # initialize DB connection
-            self.conn = psycopg2.connect(host=self.postgresql["host"],
-                                        port=self.postgresql["port"],
-                                        database=self.postgresql["database"],
-                                        user=self.postgresql["user"],
-                                        password=self.postgresql["password"])
+            self.conn = psycopg2.connect(
+                host=self.postgresql["host"],
+                port=self.postgresql["port"],
+                database=self.postgresql["database"],
+                user=self.postgresql["user"],
+                password=self.postgresql["password"],
+            )
             self.cursor = self.conn.cursor()
 
             self.cursor.execute("TRUNCATE TABLE CurrentVersions RESTART IDENTITY")
@@ -453,18 +481,19 @@ Cleanup Postgresql database:
         Resets the Elasticsearch Database.
         """
 
-        print("""
+        print(
+            """
 Cleanup Elasticsearch database:
     This will truncate all tables and reset the whole Elasticsearch database.
-              """)
+              """
+        )
 
         confirm = self.no_confirm
 
         if not confirm:
-            confirm = 'yes' in builtins.input(
-                """
-Do you really want to do this? Write 'yes' to confirm: {yes}"""
-                    .format(yes='yes' if confirm else ''))
+            confirm = "yes" in builtins.input(
+                "Do you really want to do this? Write 'yes' to confirm: "
+            )
 
         if not confirm:
             print("Did not type yes. Thus aborting.")
@@ -472,26 +501,39 @@ Do you really want to do this? Write 'yes' to confirm: {yes}"""
 
         try:
             # initialize DB connection
-            if not self.elasticsearch.get("username", None) or not self.elasticsearch.get("username", None):
+            if not self.elasticsearch.get(
+                "username", None
+            ) or not self.elasticsearch.get("username", None):
                 self.elasticsearch["username"] = os.getenv("ELASTICSEARCH_USERNAME")
                 self.elasticsearch["secret"] = os.getenv("ELASTICSEARCH_SECRET")
-                
-            
-            es = Elasticsearch([self.elasticsearch["host"]],
-                               http_auth=(self.elasticsearch["username"], self.elasticsearch["secret"]),
-                               port=self.elasticsearch["port"],
-                               use_ssl=self.elasticsearch["use_ca_certificates"],
-                               verify_certs=self.elasticsearch["use_ca_certificates"],
-                               ca_certs=self.elasticsearch["ca_cert_path"],
-                               client_cert=self.elasticsearch["client_cert_path"],
-                               client_key=self.elasticsearch["client_key_path"])
+
+            es_client = Elasticsearch(
+                [self.elasticsearch["host"]],
+                http_auth=(
+                    self.elasticsearch["username"],
+                    self.elasticsearch["secret"],
+                ),
+                verify_certs=self.elasticsearch["use_ca_certificates"],
+                ca_certs=self.elasticsearch["ca_cert_path"],
+                client_cert=self.elasticsearch["client_cert_path"],
+                client_key=self.elasticsearch["client_key_path"],
+            )
 
             print("Resetting Elasticsearch database...")
-            es.indices.delete(index=self.elasticsearch["index_current"], ignore=[400, 404])
-            es.indices.delete(index=self.elasticsearch["index_archive"], ignore=[400, 404])
-        except ConnectionError as error:
-            self.log.error("Failed to connect to Elasticsearch. "
-                           "Please check if the database is running and the config is correct: %s" % error)
+            es_client.options(ignore_status=[400, 404]).indices.delete(
+                index=self.elasticsearch["index_current"]
+            )
+            es_client.options(ignore_status=[400, 404]).indices.delete(
+                index=self.elasticsearch["index_archive"]
+            )
+        except (ConnectionError, OSError) as error:
+            self.log.error(
+                f"""
+                Failed to connect to Elasticsearch. 
+                Please check if the elk is running and the config is correct: 
+                {error}
+                """
+            )
 
     def reset_files(self):
         """
@@ -502,26 +544,29 @@ Do you really want to do this? Write 'yes' to confirm: {yes}"""
         path = SavepathParser.get_base_path(
             SavepathParser.get_abs_path_static(
                 self.cfg.section("Files")["local_data_directory"],
-                os.path.dirname(self.cfg_file_path)
+                os.path.dirname(self.cfg_file_path),
             )
         )
 
-        print("""
-Cleanup files:
-    This will delete {path} and all its contents.
-""".format(path=path))
+        print(
+            f"""
+            Cleanup files:
+                This will delete {path} and all its contents.
+            """.format(
+                path=path
+            )
+        )
 
         if not confirm:
-            confirm = 'yes' in builtins.input(
-                """
-    Do you really want to do this? Write 'yes' to confirm: {yes}"""
-                    .format(yes='yes' if confirm else ''))
+            confirm = "yes" in builtins.input(
+                "Do you really want to do this? Write 'yes' to confirm:"
+            )
 
         if not confirm:
             print("Did not type yes. Thus aborting.")
             return
 
-        print("Removing: {}".format(path))
+        print(f"Removing: {path}")
 
         try:
             shutil.rmtree(path)
@@ -530,11 +575,12 @@ Cleanup files:
                 self.log.error("%s does not exist.", path)
             self.log.error(error)
 
-    class CrawlerList(object):
+    class CrawlerList:
         """
         Class that manages all crawlers that aren't supposed to be daemonized.
         Exists to be able to use threading.Lock().
         """
+
         lock = None
         crawler_list = []
         graceful_stop = False
@@ -548,11 +594,8 @@ Cleanup files:
 
             :param: item to append to the crawler_list.
             """
-            self.lock.acquire()
-            try:
+            with self.lock:
                 self.crawler_list.append(item)
-            finally:
-                self.lock.release()
 
         def len(self):
             """
@@ -568,27 +611,21 @@ Cleanup files:
 
             :return: crawler_list's first item
             """
-            if self.graceful_stop:
-                return None
-            self.lock.acquire()
-            try:
-                if len(self.crawler_list) > 0:
-                    item = self.crawler_list.pop(0)
-                else:
-                    item = None
-            finally:
-                self.lock.release()
-
-            return item
+            if not self.graceful_stop:
+                with self.lock:
+                    if len(self.crawler_list) > 0:
+                        return self.crawler_list.pop(0)
+            return None
 
         def stop(self):
             self.graceful_stop = True
 
-    class DaemonList(object):
+    class DaemonList:
         """
         Class that manages all crawlers that are supposed to be daemonized.
         Exists to be able to use threading.Lock().
         """
+
         lock = None
 
         daemons = {}
@@ -624,12 +661,9 @@ Cleanup files:
             :param _time: The repetition-time (every _time seconds the crawler)
                 starts again.
             """
-            self.lock.acquire()
-            try:
+            with self.lock:
                 self.daemons[index] = _time
                 self.add_execution(time.time(), index)
-            finally:
-                self.lock.release()
 
         def add_execution(self, _time, index):
             """
@@ -657,19 +691,17 @@ Cleanup files:
             if self.graceful_stop:
                 return None
 
-            self.lock.acquire()
-            self.sort_queue()
+            with self.lock:
+                self.sort_queue()
 
-            try:
                 item = self.queue.pop(0)
                 prev_time = self.queue_times.pop(0)
 
                 self.add_execution(
                     # prev + daemonize if in time, now + daemonize if in delay
-                    max(prev_time, time.time()) + self.daemons[item[1]], item[1]
+                    max(prev_time, time.time()) + self.daemons[item[1]],
+                    item[1],
                 )
-            finally:
-                self.lock.release()
 
             return item
 
@@ -678,16 +710,25 @@ Cleanup files:
 
 
 @plac.annotations(
-    cfg_file_path=plac.Annotation('path to the config file', 'option', 'c'),
-    resume=plac.Annotation('resume crawling from last process', 'flag'),
-    reset_elasticsearch=plac.Annotation('reset Elasticsearch indexes', 'flag'),
-    reset_json=plac.Annotation('reset JSON files', 'flag'),
-    reset_mysql=plac.Annotation('reset MySQL database', 'flag'),
-    reset_postgresql=plac.Annotation('reset Postgresql database', 'flag'),
-    reset_all=plac.Annotation('combines all reset options', 'flag'),
-    no_confirm=plac.Annotation('skip confirm dialogs', 'flag')
+    cfg_file_path=plac.Annotation("path to the config file", "option", "c"),
+    resume=plac.Annotation("resume crawling from last process", "flag"),
+    reset_elasticsearch=plac.Annotation("reset Elasticsearch indexes", "flag"),
+    reset_json=plac.Annotation("reset JSON files", "flag"),
+    reset_mysql=plac.Annotation("reset MySQL database", "flag"),
+    reset_postgresql=plac.Annotation("reset Postgresql database", "flag"),
+    reset_all=plac.Annotation("combines all reset options", "flag"),
+    no_confirm=plac.Annotation("skip confirm dialogs", "flag"),
 )
-def cli(cfg_file_path, resume, reset_elasticsearch, reset_mysql, reset_postgresql, reset_json, reset_all, no_confirm):
+def cli(
+    cfg_file_path,
+    resume,
+    reset_elasticsearch,
+    reset_mysql,
+    reset_postgresql,
+    reset_json,
+    reset_all,
+    no_confirm,
+):
     "A generic news crawler and extractor."
 
     if reset_all:
@@ -699,7 +740,15 @@ def cli(cfg_file_path, resume, reset_elasticsearch, reset_mysql, reset_postgresq
     if cfg_file_path and not cfg_file_path.endswith(os.path.sep):
         cfg_file_path += os.path.sep
 
-    NewsPleaseLauncher(cfg_file_path, resume, reset_elasticsearch, reset_json, reset_mysql, reset_postgresql, no_confirm)
+    NewsPleaseLauncher(
+        cfg_file_path,
+        resume,
+        reset_elasticsearch,
+        reset_json,
+        reset_mysql,
+        reset_postgresql,
+        no_confirm,
+    )
 
 
 def main():

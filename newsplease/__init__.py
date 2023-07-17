@@ -8,11 +8,12 @@ from six.moves import urllib
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
-from newsplease.pipeline.extractor import article_extractor
-from newsplease.crawler.items import NewscrawlerItem
 from dotmap import DotMap
-from newsplease.pipeline.pipelines import ExtractedInformationStorage
+
+from newsplease.crawler.items import NewscrawlerItem
 from newsplease.crawler.simple_crawler import SimpleCrawler
+from newsplease.pipeline.extractor import article_extractor
+from newsplease.pipeline.pipelines import ExtractedInformationStorage
 
 
 class EmptyResponseError(ValueError):

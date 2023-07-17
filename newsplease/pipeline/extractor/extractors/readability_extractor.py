@@ -2,8 +2,10 @@ from copy import deepcopy
 
 from readability import Document
 
-from .abstract_extractor import AbstractExtractor
 from ..article_candidate import ArticleCandidate
+from .abstract_extractor import AbstractExtractor
+
+# pylint: disable=assignment-from-no-return
 
 
 class ReadabilityExtractor(AbstractExtractor):
@@ -16,13 +18,14 @@ class ReadabilityExtractor(AbstractExtractor):
         self.name = "readability"
 
     def extract(self, item):
-        """Creates an readability document and returns an ArticleCandidate containing article title and text.
+        """Creates an readability document and returns an
+        ArticleCandidate containing article title and text.
 
         :param item: A NewscrawlerItem to parse.
         :return: ArticleCandidate containing the recovered article data.
         """
 
-        doc = Document(deepcopy(item['spider_response'].body))
+        doc = Document(deepcopy(item["spider_response"].body))
         description = doc.summary()
 
         article_candidate = ArticleCandidate()

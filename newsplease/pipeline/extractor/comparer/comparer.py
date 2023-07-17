@@ -1,15 +1,16 @@
-from .comparer_Language import ComparerLanguage
+from ..article_candidate import ArticleCandidate
 from .comparer_author import ComparerAuthor
 from .comparer_date import ComparerDate
 from .comparer_description import ComparerDescription
+from .comparer_language import ComparerLanguage
 from .comparer_text import ComparerText
 from .comparer_title import ComparerTitle
 from .comparer_topimage import ComparerTopimage
-from ..article_candidate import ArticleCandidate
 
 
 class Comparer:
-    """This class sends the list of ArticleCandidates to the subcomparer and saves the result in Article."""
+    """This class sends the list of ArticleCandidates to the
+    subcomparer and saves the result in Article."""
 
     # Create subcomparer
     def __init__(self):
@@ -22,11 +23,13 @@ class Comparer:
         self.comparer_language = ComparerLanguage()
 
     def compare(self, item, article_candidates):
-        """Compares the article candidates using the different submodules and saves the best results in
-        new ArticleCandidate object
+        """Compares the article candidates using the different submodules and
+            saves the best results in
+            new ArticleCandidate object
 
         :param item: The NewscrawlerItem related to the ArticleCandidates
-        :param article_candidates: The list of ArticleCandidate-Objects which have been extracted
+        :param article_candidates: The list of
+            ArticleCandidate-Objects which have been extracted
         :return: An ArticleCandidate-object containing the best results
         """
 

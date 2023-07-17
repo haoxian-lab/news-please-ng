@@ -1,13 +1,11 @@
 import logging
 import re
+from ast import literal_eval
 
-try:
-    basestring = basestring
-except NameError:
-    basestring = (str, bytes)
+basestring = (str, bytes)
 
 
-class HeuristicsManager(object):
+class HeuristicsManager:
     """
     This class is for managing the heuristics of
     a heuristics file (../heuristics.py)
@@ -18,6 +16,7 @@ class HeuristicsManager(object):
     The config is provided in self.cfg_heuristics,
     and logging is provided in self.log.
     """
+
     cfg_heuristics = None
     log = None
 
@@ -55,14 +54,18 @@ class HeuristicsManager(object):
             heuristic_func = getattr(self, heuristic)
             result = heuristic_func(response, site)
             check = self.__evaluate_result(result, condition)
-            statement = re.sub(r"\b%s\b" % heuristic, str(check), statement)
+            statement = re.sub(rf"\b{heuristic}\b", str(check), statement)
 
-            self.log.debug("Checking heuristic (%s)"
-                           " result (%s) on condition (%s): %s",
-                           heuristic, result, condition, check)
+            self.log.debug(
+                "Checking heuristic (%s) result (%s) on condition (%s): %s",
+                heuristic,
+                result,
+                condition,
+                check,
+            )
 
         self.log.debug("Condition (evaluated): %s", statement)
-        is_article = eval(statement)
+        is_article = literal_eval(statement)
         self.log.debug("Article accepted: %s", is_article)
         return is_article
 
@@ -75,11 +78,9 @@ class HeuristicsManager(object):
         if self.__heuristics_condition is not None:
             return self.__heuristics_condition
         if "pass_heuristics_condition" in self.__sites_object[url]:
-            condition = \
-                self.__sites_object[url]["pass_heuristics_condition"]
+            condition = self.__sites_object[url]["pass_heuristics_condition"]
         else:
-            condition = \
-                self.cfg_heuristics["pass_heuristics_condition"]
+            condition = self.cfg_heuristics["pass_heuristics_condition"]
 
         # Because the condition will be eval-ed (Yeah, eval is evil, BUT only
         # when not filtered properly), we are filtering it here.
@@ -94,15 +95,18 @@ class HeuristicsManager(object):
             disalloweds = disalloweds.replace(allowed, " ")
 
         for heuristic, _ in heuristics.items():
-            disalloweds = re.sub(r"\b%s\b" % heuristic, " ", disalloweds)
+            disalloweds = re.sub(rf"\b{heuristic}\b", " ", disalloweds)
 
         disalloweds = disalloweds.split(" ")
         for disallowed in disalloweds:
             if disallowed != "":
-                self.log.error("Misconfiguration: In the condition,"
-                               " an unknown heuristic was found and"
-                               " will be ignored: %s", disallowed)
-                condition = re.sub(r"\b%s\b" % disallowed, "True", condition)
+                self.log.error(
+                    "Misconfiguration: In the condition,"
+                    " an unknown heuristic was found and"
+                    " will be ignored: %s",
+                    disallowed,
+                )
+                condition = re.sub(rf"\b{disallowed}\b", "True", condition)
 
         self.__heuristics_condition = condition
         # Now condition should just consits of not, and, or, (, ), and all
@@ -130,28 +134,28 @@ class HeuristicsManager(object):
         # allowing <=, >=, <, >, = conditions or string
         # when they start with " or '
         if isinstance(condition, basestring):
-
             # Check if result should match a string
-            if (condition.startswith("'") and condition.endswith("'")) or \
-                    (condition.startswith('"') and condition.endswith('"')):
+            if (condition.startswith("'") and condition.endswith("'")) or (
+                condition.startswith('"') and condition.endswith('"')
+            ):
                 if isinstance(result, basestring):
-                    self.log.debug("Condition %s recognized as string.",
-                                   condition)
+                    self.log.debug("Condition %s recognized as string.", condition)
                     return result == condition[1:-1]
-                return self.__evaluation_error(
-                    result, condition, "Result not string")
+                return self.__evaluation_error(result, condition, "Result not string")
 
             # Only number-comparision following
             if not isinstance(result, (float, int)):
                 return self.__evaluation_error(
-                    result, condition, "Result not number on comparision")
+                    result, condition, "Result not number on comparision"
+                )
 
             # Check if result should match a number
             if condition.startswith("="):
                 number = self.__try_parse_number(condition[1:])
                 if isinstance(number, bool):
                     return self.__evaluation_error(
-                        result, condition, "Number not parsable (=)")
+                        result, condition, "Number not parsable (=)"
+                    )
                 return result == number
 
             # Check if result should be >= then a number
@@ -159,7 +163,8 @@ class HeuristicsManager(object):
                 number = self.__try_parse_number(condition[2:])
                 if isinstance(number, bool):
                     return self.__evaluation_error(
-                        result, condition, "Number not parsable (>=)")
+                        result, condition, "Number not parsable (>=)"
+                    )
                 return result >= number
 
             # Check if result should be <= then a number
@@ -167,7 +172,8 @@ class HeuristicsManager(object):
                 number = self.__try_parse_number(condition[2:])
                 if isinstance(number, bool):
                     return self.__evaluation_error(
-                        result, condition, "Number not parsable (<=)")
+                        result, condition, "Number not parsable (<=)"
+                    )
                 return result <= number
 
             # Check if result should be > then a number
@@ -175,7 +181,8 @@ class HeuristicsManager(object):
                 number = self.__try_parse_number(condition[1:])
                 if isinstance(number, bool):
                     return self.__evaluation_error(
-                        result, condition, "Number not parsable (>)")
+                        result, condition, "Number not parsable (>)"
+                    )
                 return result > number
 
             # Check if result should be < then a number
@@ -183,14 +190,14 @@ class HeuristicsManager(object):
                 number = self.__try_parse_number(condition[1:])
                 if isinstance(number, bool):
                     return self.__evaluation_error(
-                        result, condition, "Number not parsable (<)")
+                        result, condition, "Number not parsable (<)"
+                    )
                 return result < number
 
             # Check if result should be equal a number
             number = self.__try_parse_number(condition)
             if isinstance(number, bool):
-                return self.__evaluation_error(
-                    result, condition, "Number not parsable")
+                return self.__evaluation_error(result, condition, "Number not parsable")
             return result == number
 
         # Check if the condition is a number and matches the result
@@ -201,9 +208,13 @@ class HeuristicsManager(object):
 
     def __evaluation_error(self, result, condition, throw):
         """Helper-method for easy error-logging"""
-        self.log.error("Result does not match condition, dropping item. "
-                       "Result %s; Condition: %s; Throw: %s",
-                       result, condition, throw)
+        self.log.error(
+            "Result does not match condition, dropping item. "
+            "Result %s; Condition: %s; Throw: %s",
+            result,
+            condition,
+            throw,
+        )
         return False
 
     def __try_parse_number(self, string):
@@ -238,8 +249,6 @@ class HeuristicsManager(object):
                     heuristics[heuristic] = value
         self.__sites_heuristics[site["url"]] = heuristics
 
-        self.log.debug(
-            "Enabled heuristics for %s: %s", site["url"], heuristics
-        )
+        self.log.debug("Enabled heuristics for %s: %s", site["url"], heuristics)
 
         return heuristics

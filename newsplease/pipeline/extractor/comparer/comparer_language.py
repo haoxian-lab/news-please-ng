@@ -1,23 +1,24 @@
 class ComparerLanguage:
     """Implements a compare method for detected languages"""
 
-    def extract(self, item, list_article_candidate):
+    def extract(self, item, list_article_candidate):  # pylint: disable=unused-argument
         """Compares how often any language was detected.
 
         :param item: The corresponding NewscrawlerItem
-        :param list_article_candidate: A list, the list of ArticleCandidate-Objects which have been extracted
+        :param list_article_candidate: A list, the list of
+            ArticleCandidate-Objects which have been extracted
         :return: A string, the language which was most frequently detected
         """
 
         # Save extracted languages in list
         languages_extracted = []
 
-        # Save the extracted language of newspaper in extra variable, because newspaper extract meta-language
+        # Save the extracted language of newspaper in extra variable,
+        # because newspaper extract meta-language
         # which is very accurate.
         language_newspaper = None
 
         for article_candidate in list_article_candidate:
-
             if article_candidate.language:
                 languages_extracted.append(article_candidate.language)
 
@@ -35,16 +36,20 @@ class ComparerLanguage:
 
         for language in languages_extracted_set:
             if language:
-                languages_extracted_number.append((languages_extracted.count(language), language))
-
-        if not (languages_extracted_number):
-            return None
-
-        # If there is no favorite language, return the language extracted by newspaper
-        if max(languages_extracted_number)[0] == min(languages_extracted_number)[0] and language_newspaper is not None:
-            return language_newspaper
+                languages_extracted_number.append(
+                    (languages_extracted.count(language), language)
+                )
 
         if languages_extracted_number:
-            return (max(languages_extracted_number))[1]
-        else:
-            return None
+            # If there is no favorite language, return the
+            # language extracted by newspaper
+            if (
+                max(languages_extracted_number)[0] == min(languages_extracted_number)[0]
+                and language_newspaper is not None
+            ):
+                return language_newspaper
+
+            if languages_extracted_number:
+                return (max(languages_extracted_number))[1]
+
+        return None
