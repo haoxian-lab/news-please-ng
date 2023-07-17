@@ -3,8 +3,9 @@ Helper class for url extraction.
 """
 import os
 import re
-from urllib.parse import urlparse
 from urllib import request
+from urllib.parse import urlparse
+
 from newsplease.config import CrawlerConfig
 
 # len(".markdown") = 9

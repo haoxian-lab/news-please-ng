@@ -1,6 +1,6 @@
-from ast import literal_eval
 import logging
 import re
+from ast import literal_eval
 
 basestring = (str, bytes)
 

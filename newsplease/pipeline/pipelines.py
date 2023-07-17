@@ -8,12 +8,13 @@ import json
 import logging
 import os.path
 
+import pandas as pd
 import psycopg2
 import pymysql
 from dateutil import parser as dateparser
 from elasticsearch import Elasticsearch
 from scrapy.exceptions import DropItem
-import pandas as pd
+
 from newsplease.news_article import NewsArticle
 
 from ..config import CrawlerConfig

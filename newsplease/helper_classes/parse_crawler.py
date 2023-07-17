@@ -4,8 +4,9 @@ This is a helper class for the crawler's parse methods
 
 import re
 import time
-from loguru import logger
+
 import scrapy
+from loguru import logger
 
 # to improve performance, regex statements are compiled only once per module
 re_html = re.compile("text/html")

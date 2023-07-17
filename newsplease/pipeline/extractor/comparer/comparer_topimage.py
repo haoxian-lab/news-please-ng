@@ -1,5 +1,4 @@
 import re
-
 from urllib.parse import urljoin
 
 # to improve performance, regex statements are compiled only once per module

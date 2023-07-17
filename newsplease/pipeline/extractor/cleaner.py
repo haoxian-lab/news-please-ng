@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+
 from lxml import html
 
 # to improve performance, regex statements are compiled only once per module

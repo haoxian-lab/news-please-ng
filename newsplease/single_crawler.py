@@ -9,9 +9,9 @@ import logging
 import os
 import shutil
 import sys
+from _thread import start_new_thread
 from ast import literal_eval
 
-from _thread import start_new_thread
 from scrapy.crawler import CrawlerProcess
 from scrapy.settings import Settings
 from scrapy.spiderloader import SpiderLoader
@@ -22,7 +22,6 @@ from newsplease.config import CrawlerConfig, JsonConfig
 from newsplease.crawler.items import NewscrawlerItem
 from newsplease.helper import Helper
 from newsplease.helper_classes.class_loader import ClassLoader
-
 
 cur_path = os.path.dirname(os.path.realpath(__file__))
 par_path = os.path.dirname(cur_path)

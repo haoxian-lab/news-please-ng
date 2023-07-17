@@ -1,3 +1,4 @@
+import builtins
 import os
 import shutil
 import signal
@@ -6,7 +7,6 @@ import threading
 import time
 from subprocess import Popen
 
-import builtins
 import plac
 import psycopg2
 import pymysql

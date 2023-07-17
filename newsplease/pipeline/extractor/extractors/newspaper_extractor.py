@@ -1,5 +1,4 @@
 from loguru import logger
-
 from newspaper import Article
 
 from ..article_candidate import ArticleCandidate
