@@ -4,6 +4,6 @@ RUN apk add -U --no-cache build-base curl git make gcc python3-dev libffi-dev mu
 ADD . /news-please-ng
 WORKDIR  /news-please-ng
 
-RUN pip3 install .
+RUN pip3 install --upgrade pip && pip3 install .
 
 CMD ["python3", " __main__.py", "-c", "/news-please-ng-config"]
