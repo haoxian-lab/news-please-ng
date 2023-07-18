@@ -65,7 +65,7 @@ class HeuristicsManager:
             )
 
         self.log.debug("Condition (evaluated): %s", statement)
-        is_article = literal_eval(statement)
+        is_article = eval(statement)
         self.log.debug("Article accepted: %s", is_article)
         return is_article
 
