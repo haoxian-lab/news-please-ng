@@ -1,9 +1,9 @@
-FROM python:3.9-alpine3.17
+FROM python:3.9-slim-bookworm
 
-RUN apk add -U --no-cache build-base curl git make gcc python3-dev libffi-dev musl-dev libxml2-dev libxslt-dev openssl-dev zlib-dev jpeg-dev
+RUN apt-get update && apt-get install build-essential curl git gcc python3-pip -y && rm -rf /var/lib/apt/lists/*
 ADD . /news-please-ng
 WORKDIR  /news-please-ng
 
-RUN pip3 install --upgrade pip && pip3 install .
+RUN pip3 install --upgrade pip && pip3 install . --prefer-binary
 
 CMD ["python3", " __main__.py", "-c", "/news-please-ng-config"]
