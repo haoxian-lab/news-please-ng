@@ -15,13 +15,6 @@ spec:
         app: news-please
     spec:
       containers:
-        - name: news-please
-          image: sharockys/news-please-ng:main
-          volumeMounts:
-            - name: config-volume
-              mountPath: /news-please-ng-config
-          command: ["python3"]
-          args: ["newsplease/__main__.py", "-c", "/news-please-ng-config"]
         - name: news-please-vpn-sidecar
           image: qmcgaw/gluetun:latest
           securityContext:
@@ -37,14 +30,23 @@ spec:
             - name: UNBLOCK
               value: cluster.local
             - name: FIREWALL_OUTBOUND_SUBNETS
-              value: 0.0.0.0/0
+              value: 10.0.0.0/8
             - name: TZ
               value: Europe/Paris
             - name: UPDATER_PERIOD
               value: 6h
+            - name: HTTPPROXY
+              value: on
           volumeMounts:
             - name: vpn-volume
               mountPath: /gluetun
+        - name: news-please
+          image: sharockys/news-please-ng:main
+          volumeMounts:
+            - name: config-volume
+              mountPath: /news-please-ng-config
+          command: ["python3"]
+          args: ["newsplease/__main__.py", "-c", "/news-please-ng-config"]
 
       volumes:
         - name: config-volume
@@ -54,16 +56,3 @@ spec:
           emptyDir:
             sizeLimit: 50Mi
 
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: longhorn-vpn-pvc
-  namespace: news-dev
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn-dev
-  resources:
-    requests:
-      storage: 100Mi

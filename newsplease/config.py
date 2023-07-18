@@ -233,7 +233,7 @@ class JsonConfig(object):
 
         (keep in mind: this is a singleton, so just called once)
         """
-        self.log = logging.getLogger(__name__)
+        self.log = logger
         if JsonConfig.instance is not None:
             self.log.error("Multiple instances of singleton-class")
             raise RuntimeError("Multiple instances of singleton-class")
