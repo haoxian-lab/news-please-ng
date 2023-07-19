@@ -269,7 +269,7 @@ class NewsPleaseLauncher:
             str(daemonize),
         ]
 
-        self.log.debug("Calling Process: %s", call_process)
+        self.log.debug(f"Calling Process: {call_process}")
 
         crawler = Popen(
             call_process, stderr=None, stdout=None

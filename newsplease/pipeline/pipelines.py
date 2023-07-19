@@ -13,8 +13,10 @@ import psycopg2
 import pymysql
 from dateutil import parser as dateparser
 from elasticsearch import Elasticsearch
+from loguru import logger
 from scrapy.exceptions import DropItem
 
+from newsplease.crawler.items import NewscrawlerItem
 from newsplease.news_article import NewsArticle
 
 from ..config import CrawlerConfig
@@ -28,13 +30,14 @@ class ArticleMasterExtractor:
     """
 
     def __init__(self):
-        self.log = logging.getLogger(__name__)
+        self.log = logger
         self.cfg = CrawlerConfig.get_instance()
         self.extractor_list = self.cfg.section("ArticleMasterExtractor")["extractors"]
 
         self.extractor = article_extractor.Extractor(self.extractor_list)
 
-    def process_item(self, item, spider):
+    def process_item(self, item: NewscrawlerItem, spider):
+        self.log.debug(f"Extracting article from: {item}")
         return self.extractor.extract(item)
 
 
@@ -55,7 +58,7 @@ class RSSCrawlCompare:
     compare_versions = "SELECT * FROM CurrentVersions WHERE url=%s"
 
     def __init__(self):
-        self.log = logging.getLogger(__name__)
+        self.log = logger
 
         self.cfg = CrawlerConfig.get_instance()
         self.delta_time = self.cfg.section("Crawler")[
@@ -141,7 +144,7 @@ class MySQLStorage:
 
     # init database connection
     def __init__(self):
-        self.log = logging.getLogger(__name__)
+        self.log = logger
 
         self.cfg = CrawlerConfig.get_instance()
         self.database = self.cfg.section("MySQL")
@@ -287,8 +290,7 @@ class ExtractedInformationStorage:
     log = None
 
     def __init__(self):
-        self.log = logging.getLogger(__name__)
-        self.log.addHandler(logging.NullHandler())
+        self.log = logger
         self.cfg = CrawlerConfig.get_instance()
 
     @staticmethod
@@ -412,7 +414,7 @@ class PostgresqlStorage(ExtractedInformationStorage):
     def __init__(self):
         super().__init__()
         # import logging
-        self.log = logging.getLogger(__name__)
+        self.log = logger
         self.cfg = CrawlerConfig.get_instance()
         self.database = self.cfg.section("Postgresql")
         # Establish DB connection
@@ -817,7 +819,7 @@ class PandasStorage(ExtractedInformationStorage):
 
     def __init__(self):
         super().__init__()
-        self.log = logging.getLogger(__name__)
+        self.log = logger
         self.cfg = CrawlerConfig.get_instance()
         self.database = self.cfg.section("Pandas")
 

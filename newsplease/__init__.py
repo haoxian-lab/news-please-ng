@@ -2,18 +2,18 @@ import datetime
 import os
 import sys
 import urllib
+from typing import Optional
 
 from bs4.dammit import EncodingDetector
-from six.moves import urllib
-
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-
 from dotmap import DotMap
 
 from newsplease.crawler.items import NewscrawlerItem
 from newsplease.crawler.simple_crawler import SimpleCrawler
+from newsplease.news_article import NewsArticle
 from newsplease.pipeline.extractor import article_extractor
 from newsplease.pipeline.pipelines import ExtractedInformationStorage
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 
 class EmptyResponseError(ValueError):
@@ -108,7 +108,7 @@ class NewsPlease:
         return final_article
 
     @staticmethod
-    def from_url(url, timeout=None):
+    def from_url(url, timeout=None) -> Optional[NewsArticle]:
         """
         Crawls the article from the url and extracts relevant information.
         :param url:
