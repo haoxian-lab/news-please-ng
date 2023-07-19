@@ -244,7 +244,7 @@ class JsonConfig(object):
 
         :param str filepath: path to the config-file (including file-name)
         """
-        self.log.debug("Loading JSON-file (%s)", filepath)
+        self.log.debug(f"Loading JSON-file ({filepath})")
         self.load_json(filepath)
 
     def load_json(self, filepath):

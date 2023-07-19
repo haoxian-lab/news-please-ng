@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class ArticleCandidate:
     """This is a helpclass to store the result of an article after
         it was extracted. Every implemented extractor
