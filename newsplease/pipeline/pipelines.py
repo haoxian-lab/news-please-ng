@@ -11,10 +11,11 @@ import os.path
 import pandas as pd
 import psycopg2
 import pymysql
-from loguru import logger
 from dateutil import parser as dateparser
 from elasticsearch import Elasticsearch
+from loguru import logger
 from scrapy.exceptions import DropItem
+
 from newsplease.crawler.items import NewscrawlerItem
 from newsplease.news_article import NewsArticle
 

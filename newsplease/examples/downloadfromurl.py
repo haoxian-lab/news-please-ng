@@ -4,8 +4,8 @@ This script downloads article information of one URL. The results are stored in
 JSON-files in a sub-folder.
 You need to adapt the variables url and basepath in order to use the script.
 """
-import os
 import json
+import os
 
 from newsplease import NewsPlease
 

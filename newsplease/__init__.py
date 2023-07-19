@@ -1,18 +1,17 @@
 import datetime
 import os
 import sys
-from typing import Optional
 import urllib
+from typing import Optional
+
 from bs4.dammit import EncodingDetector
 from dotmap import DotMap
 
-
 from newsplease.crawler.items import NewscrawlerItem
 from newsplease.crawler.simple_crawler import SimpleCrawler
+from newsplease.news_article import NewsArticle
 from newsplease.pipeline.extractor import article_extractor
 from newsplease.pipeline.pipelines import ExtractedInformationStorage
-from newsplease.news_article import NewsArticle
-
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
