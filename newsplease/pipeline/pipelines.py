@@ -290,7 +290,6 @@ class ExtractedInformationStorage:
 
     def __init__(self):
         self.log = logger
-        self.log.addHandler(logging.NullHandler())
         self.cfg = CrawlerConfig.get_instance()
 
     @staticmethod
